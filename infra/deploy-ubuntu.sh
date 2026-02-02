@@ -201,29 +201,24 @@ sudo -u $VERIQO_USER ./venv/bin/alembic upgrade head
 
 # Create admin user
 log "Creating admin user..."
-sudo -u $VERIQO_USER ./venv/bin/python3 - <<EOF
-import asyncio
-from uuid import uuid4
-from veriqo.db.base import async_session_factory
-from veriqo.users.models import User, UserRole
-from veriqo.auth.password import hash_password
+PASSWORD_HASH=$(sudo -u $VERIQO_USER ./venv/bin/python3 -c "from veriqo.auth.password import hash_password; print(hash_password('${ADMIN_PASSWORD}'))")
 
-async def create_admin():
-    async with async_session_factory() as session:
-        admin = User(
-            id=str(uuid4()),
-            email="${ADMIN_EMAIL}",
-            password_hash=hash_password("${ADMIN_PASSWORD}"),
-            full_name="Administrator",
-            role=UserRole.ADMIN,
-            is_active=True,
-        )
-        session.add(admin)
-        await session.commit()
-        print(f"Admin user created: ${ADMIN_EMAIL}")
+sudo -u postgres psql -d $DB_NAME <<EOSQL
+INSERT INTO users (id, email, password_hash, full_name, role, is_active, created_at, updated_at)
+VALUES (
+    gen_random_uuid(),
+    '${ADMIN_EMAIL}',
+    '${PASSWORD_HASH}',
+    'Administrator',
+    'admin',
+    true,
+    NOW(),
+    NOW()
+)
+ON CONFLICT (email) DO NOTHING;
+EOSQL
 
-asyncio.run(create_admin())
-EOF
+log "Admin user created: ${ADMIN_EMAIL}"
 
 log "Backend setup complete"
 
