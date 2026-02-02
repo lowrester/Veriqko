@@ -8,6 +8,7 @@ import { JobsPage } from '@/features/jobs/JobsPage'
 import { JobDetailPage } from '@/features/jobs/JobDetailPage'
 import { NewJobPage } from '@/features/jobs/NewJobPage'
 import { RunnerPage } from '@/features/runner/RunnerPage'
+import { QcPage } from '@/features/qc/QcPage'
 import { IntakeNewPage } from '@/features/intake/IntakeNewPage'
 import { SearchPage } from '@/features/search/SearchPage'
 import { OpsPage } from '@/features/ops/OpsPage'
@@ -61,6 +62,14 @@ function App() {
           element={
             <RequireRole anyOf={['admin', 'supervisor', 'technician']}>
               <RunnerPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="job/:id/qc"
+          element={
+            <RequireRole anyOf={['admin', 'supervisor']}>
+              <QcPage />
             </RequireRole>
           }
         />
