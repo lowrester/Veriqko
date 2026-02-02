@@ -47,6 +47,10 @@ echo -e "${BLUE}🔨 Building frontend...${NC}"
 # Build frontend
 sudo -u "$VERIQO_USER" npm run build
 
+echo -e "${BLUE}🗄️ Running database migrations...${NC}"
+cd "$API_DIR" || exit 1
+sudo -u "$VERIQO_USER" alembic upgrade head
+
 echo -e "${BLUE}🔄 Restarting services...${NC}"
 # Restart API service
 systemctl restart veriqo-api
