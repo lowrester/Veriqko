@@ -64,7 +64,7 @@ class Evidence(Base, UUIDMixin):
 
     # Optional metadata
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Created timestamp (evidence is immutable)
     created_at: Mapped[datetime] = mapped_column(

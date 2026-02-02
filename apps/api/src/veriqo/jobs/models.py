@@ -218,7 +218,7 @@ class JobHistory(Base, UUIDMixin):
         nullable=True,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    transition_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Relationships
     job = relationship("Job", back_populates="history")
