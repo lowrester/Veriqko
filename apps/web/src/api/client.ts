@@ -91,7 +91,7 @@ export const api = {
   upload: async <T>(
     endpoint: string,
     file: File,
-    options?: RequestOptions
+    _options?: RequestOptions
   ): Promise<T> => {
     const formData = new FormData()
     formData.append('file', file)
