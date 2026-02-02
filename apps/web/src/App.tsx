@@ -7,6 +7,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { JobsPage } from '@/features/jobs/JobsPage'
 import { JobDetailPage } from '@/features/jobs/JobDetailPage'
 import { NewJobPage } from '@/features/jobs/NewJobPage'
+import { RunnerPage } from '@/features/runner/RunnerPage'
 import { IntakeNewPage } from '@/features/intake/IntakeNewPage'
 import { SearchPage } from '@/features/search/SearchPage'
 import { OpsPage } from '@/features/ops/OpsPage'
@@ -52,6 +53,14 @@ function App() {
           element={
             <RequireRole anyOf={['admin', 'supervisor', 'technician']}>
               <IntakeNewPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="job/:id/run"
+          element={
+            <RequireRole anyOf={['admin', 'supervisor', 'technician']}>
+              <RunnerPage />
             </RequireRole>
           }
         />
