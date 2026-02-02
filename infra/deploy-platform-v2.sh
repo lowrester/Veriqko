@@ -65,10 +65,10 @@ if [ ! -d ".venv" ]; then
 fi
 
 # Install requirements
-sudo -u "$VERIQO_USER" ".venv/bin/pip" install -r requirements.txt
+sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/pip" install -r requirements.txt
 
 echo -e "${BLUE}🗄️ Running database migrations...${NC}"
-sudo -u "$VERIQO_USER" ".venv/bin/alembic" upgrade head
+sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/alembic" upgrade head
 
 echo -e "${BLUE}🔄 Restarting services...${NC}"
 systemctl restart veriqo-api
