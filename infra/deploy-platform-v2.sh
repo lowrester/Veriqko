@@ -51,7 +51,7 @@ sudo -u "$VERIQO_USER" npm run build
 
 echo -e "${BLUE}🗄️ Running database migrations...${NC}"
 cd "$API_DIR" || exit 1
-sudo -u "$VERIQO_USER" alembic upgrade head
+sudo -u "$VERIQO_USER" "$APP_DIR/.venv/bin/alembic" upgrade head
 
 echo -e "${BLUE}🔄 Restarting services...${NC}"
 systemctl restart veriqo-api
