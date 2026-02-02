@@ -49,9 +49,20 @@ echo -e "${BLUE}🔨 Building frontend...${NC}"
 # Build frontend
 sudo -u "$VERIQO_USER" npm run build
 
-echo -e "${BLUE}🗄️ Running database migrations...${NC}"
+echo -e "${BLUE}🐍 Installing backend dependencies...${NC}"
 cd "$API_DIR" || exit 1
-sudo -u "$VERIQO_USER" "$APP_DIR/.venv/bin/alembic" upgrade head
+
+# Ensure venv exists
+if [ ! -d ".venv" ]; then
+    echo "Creating virtual environment..."
+    sudo -u "$VERIQO_USER" python3 -m venv .venv
+fi
+
+# Install requirements
+sudo -u "$VERIQO_USER" ".venv/bin/pip" install -r requirements.txt
+
+echo -e "${BLUE}🗄️ Running database migrations...${NC}"
+sudo -u "$VERIQO_USER" ".venv/bin/alembic" upgrade head
 
 echo -e "${BLUE}🔄 Restarting services...${NC}"
 systemctl restart veriqo-api
