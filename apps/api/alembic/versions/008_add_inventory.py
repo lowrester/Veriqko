@@ -19,7 +19,7 @@ depends_on = None
 def upgrade() -> None:
     # Create parts table
     op.create_table('parts',
-        sa.Column('id', sa.String(), nullable=False),
+        sa.Column('id', sa.UUID(), nullable=False),
         sa.Column('sku', sa.String(length=100), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('quantity_on_hand', sa.Integer(), nullable=False, default=0),
@@ -31,9 +31,9 @@ def upgrade() -> None:
 
     # Create part_usages table
     op.create_table('part_usages',
-        sa.Column('id', sa.String(), nullable=False),
-        sa.Column('job_id', sa.String(), nullable=False),
-        sa.Column('part_id', sa.String(), nullable=False),
+        sa.Column('id', sa.UUID(), nullable=False),
+        sa.Column('job_id', sa.UUID(), nullable=False),
+        sa.Column('part_id', sa.UUID(), nullable=False),
         sa.Column('quantity', sa.Integer(), nullable=False),
         sa.Column('synced_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
