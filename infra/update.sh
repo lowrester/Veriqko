@@ -35,8 +35,8 @@ cd "$APP_DIR" || exit 1
 
 echo -e "${BLUE}📥 Pulling latest code...${NC}"
 sudo -u "$VERIQO_USER" git fetch origin
-sudo -u "$VERIQO_USER" git checkout $BRANCH
-sudo -u "$VERIQO_USER" git pull origin $BRANCH
+sudo -u "$VERIQO_USER" git reset --hard origin/$BRANCH
+
 
 echo -e "${BLUE}🐍 Updating Backend...${NC}"
 cd "$API_DIR" || exit 1
@@ -44,7 +44,7 @@ cd "$API_DIR" || exit 1
 if [ ! -d ".venv" ]; then
     sudo -u "$VERIQO_USER" python3 -m venv .venv
 fi
-sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/pip" install -r requirements.txt
+sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/pip" install --no-cache-dir -r requirements.txt
 
 echo -e "${BLUE}🗄️ Running Migrations...${NC}"
 sudo -u "$VERIQO_USER" PYTHONPATH="$API_DIR/src" "$API_DIR/.venv/bin/alembic" upgrade head
