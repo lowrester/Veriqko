@@ -9,6 +9,7 @@ import { useState } from 'react'
 // Define types for Job and Step (mock)
 interface Job {
     id: string
+    ticket_id: number
     serial_number: string
     imei?: string
     device_platform: string
@@ -85,6 +86,8 @@ export function RunnerPage() {
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
                         <span className="badge-blue text-xs uppercase tracking-wider">Runner</span>
+                        <span className="text-gray-400">/</span>
+                        <span className="font-bold text-blue-600">#{job.ticket_id}</span>
                         <span className="text-gray-400">/</span>
                         <span className="font-mono text-gray-600 font-medium">
                             {job.serial_number}

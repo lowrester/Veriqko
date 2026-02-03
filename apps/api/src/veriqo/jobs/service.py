@@ -67,6 +67,7 @@ class JobRepository:
                     Job.serial_number.ilike(search_term),
                     Job.batch_id.ilike(search_term),
                     Job.customer_reference.ilike(search_term),
+                    Job.ticket_id.cast(String).ilike(search_term),
                 )
             )
 

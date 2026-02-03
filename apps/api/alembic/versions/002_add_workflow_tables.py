@@ -16,17 +16,16 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    # 1. Create Enums
     # job_status
-    op.execute("CREATE TYPE job_status AS ENUM ('intake', 'reset', 'functional', 'qc', 'completed', 'failed', 'on_hold')")
+    op.execute("DO $$ BEGIN CREATE TYPE job_status AS ENUM ('intake', 'reset', 'functional', 'qc', 'completed', 'failed', 'on_hold'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
     # test_result_status
-    op.execute("CREATE TYPE test_result_status AS ENUM ('pass', 'fail', 'skip', 'pending')")
+    op.execute("DO $$ BEGIN CREATE TYPE test_result_status AS ENUM ('pass', 'fail', 'skip', 'pending'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
     # evidence_type
-    op.execute("CREATE TYPE evidence_type AS ENUM ('photo', 'video', 'document')")
+    op.execute("DO $$ BEGIN CREATE TYPE evidence_type AS ENUM ('photo', 'video', 'document'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
     # report_scope
-    op.execute("CREATE TYPE report_scope AS ENUM ('master', 'intake', 'reset', 'functional', 'qc')")
+    op.execute("DO $$ BEGIN CREATE TYPE report_scope AS ENUM ('master', 'intake', 'reset', 'functional', 'qc'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
     # report_variant
-    op.execute("CREATE TYPE report_variant AS ENUM ('customer', 'internal')")
+    op.execute("DO $$ BEGIN CREATE TYPE report_variant AS ENUM ('customer', 'internal'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
 
     # 2. Add station_type to users
     op.add_column('users', sa.Column('station_type', postgresql.ENUM(name='job_status', create_type=False), nullable=True))

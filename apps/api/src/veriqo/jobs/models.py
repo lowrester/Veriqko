@@ -6,6 +6,8 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Identity
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,6 +48,7 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     serial_number: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     imei: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    ticket_id: Mapped[int] = mapped_column(Integer, sa.Identity(start=10001), nullable=False, unique=True, index=True)
 
     # Workflow state
     status: Mapped[JobStatus] = mapped_column(
