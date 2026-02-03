@@ -76,7 +76,7 @@ class BrandingConfig:
 
 
 class PDFReportGenerator:
-    """Generates white-label PDF reports using ReportLab."""
+    """Generates Certification Reports using ReportLab."""
 
     def __init__(self, branding: BrandingConfig):
         self.branding = branding
@@ -84,10 +84,8 @@ class PDFReportGenerator:
         self._executor = ThreadPoolExecutor(max_workers=4)
 
     def _setup_styles(self) -> dict:
-        """Configure custom styles with branding."""
+        """Configure custom styles."""
         styles = getSampleStyleSheet()
-
-        # Convert hex to RGB
         primary = colors.HexColor(self.branding.primary_color)
 
         styles.add(
