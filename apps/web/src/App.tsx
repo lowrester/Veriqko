@@ -17,6 +17,7 @@ import { UsersPage } from '@/features/users/UsersPage'
 import { NewUserPage } from '@/features/users/NewUserPage'
 import { UserDetailPage } from '@/features/users/UserDetailPage'
 import { AdminPage } from '@/features/admin/AdminPage'
+import { SystemPage } from '@/features/admin/SystemPage'
 import { StationsPage } from '@/features/admin/StationsPage'
 import { TemplatesPage } from '@/features/admin/TemplatesPage'
 import { DeviceTypesPage } from '@/features/admin/DeviceTypesPage'
@@ -129,6 +130,7 @@ function App() {
             <Route path="printers" element={<PrintersPage />} />
             <Route path="labels" element={<LabelLayoutsPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
+            <Route path="system" element={<SystemPage />} />
 
             {/* Alias existing admin pages into settings for better UX */}
             <Route path="users" element={<UsersPage />} />

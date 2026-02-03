@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Printer, FileText, Users, Monitor, Network } from 'lucide-react';
+import { Printer, FileText, Users, Monitor, Network, Server } from 'lucide-react';
 
 export const SettingsLayout: React.FC = () => {
     const navItems = [
@@ -10,6 +10,7 @@ export const SettingsLayout: React.FC = () => {
         { to: '/settings/integrations', label: 'Integrations', icon: <Network className="w-4 h-4" /> },
         { to: '/settings/users', label: 'Users', icon: <Users className="w-4 h-4" /> },
         { to: '/settings/devices', label: 'Device Types', icon: <Monitor className="w-4 h-4" /> },
+        { to: '/settings/system', label: 'System', icon: <Server className="w-4 h-4" /> },
     ];
 
     return (
