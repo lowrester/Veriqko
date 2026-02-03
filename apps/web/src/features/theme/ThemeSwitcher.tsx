@@ -42,7 +42,7 @@ export function ThemeSwitcher() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-bg-primary rounded-xl shadow-lg border border-border p-4 z-50 animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-4">
                         {/* Mode Selection */}
                         <div>
@@ -55,8 +55,8 @@ export function ThemeSwitcher() {
                                         key={t.value}
                                         onClick={() => setTheme(t.value)}
                                         className={`flex items-center justify-center p-2 rounded-md transition-all ${theme === t.value
-                                                ? 'bg-white dark:bg-gray-700 text-brand-primary shadow-sm'
-                                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                            ? 'bg-bg-primary text-brand-primary shadow-sm ring-1 ring-border'
+                                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                             }`}
                                         title={t.label}
                                     >
@@ -77,8 +77,8 @@ export function ThemeSwitcher() {
                                         key={s.value}
                                         onClick={() => setColorScheme(s.value)}
                                         className={`w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${colorScheme === s.value
-                                                ? 'bg-brand-light/20 text-brand-primary font-medium'
-                                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                            ? 'bg-brand-light/20 text-brand-primary font-medium'
+                                            : 'text-text-secondary hover:bg-bg-secondary'
                                             }`}
                                     >
                                         <span className={`w-3 h-3 rounded-full mr-3 ${s.color}`} />

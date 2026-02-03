@@ -14,7 +14,7 @@ export function ReportList({ reports, isLoading }: ReportListProps) {
 
     if (reports.length === 0) {
         return (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <div className="text-center py-12 bg-bg-secondary rounded-lg border border-dashed border-border">
                 <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-500">No reports generated yet.</p>
             </div>
@@ -24,9 +24,9 @@ export function ReportList({ reports, isLoading }: ReportListProps) {
     return (
         <div className="space-y-3">
             {reports.map((report) => (
-                <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                <div key={report.id} className="flex items-center justify-between p-4 bg-bg-secondary rounded-lg border border-border hover:border-text-secondary transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded border border-gray-200">
+                        <div className="p-2 bg-bg-primary rounded border border-border">
                             <FileText className="w-5 h-5 text-red-500" />
                         </div>
                         <div>

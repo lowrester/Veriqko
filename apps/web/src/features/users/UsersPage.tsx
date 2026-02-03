@@ -103,7 +103,7 @@ export function UsersPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-gray-200 bg-gray-50">
+                                <tr className="border-b border-border bg-bg-secondary">
                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
                                         Name
                                     </th>
@@ -128,7 +128,7 @@ export function UsersPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {filteredUsers.map((user: UserType) => (
-                                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={user.id} className="hover:bg-bg-secondary transition-colors">
                                         <td className="px-4 py-3">
                                             <Link
                                                 to={`/users/${user.id}`}

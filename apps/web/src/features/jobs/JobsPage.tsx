@@ -94,7 +94,7 @@ export function JobsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+                <tr className="border-b border-border bg-bg-secondary">
                   <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
                     Serial Number
                   </th>
@@ -116,7 +116,7 @@ export function JobsPage() {
                 {filteredJobs.map((job) => (
                   <tr
                     key={job.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-bg-secondary transition-colors"
                   >
                     <td className="px-4 py-3">
                       <Link

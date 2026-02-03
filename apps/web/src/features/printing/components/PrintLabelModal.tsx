@@ -60,7 +60,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-lg rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="w-full max-w-lg rounded-xl bg-bg-primary p-6 shadow-xl border border-border">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                         <Printer className="w-6 h-6" />
@@ -81,7 +81,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
                             value={selectedTemplateId}
                             onChange={(e) => setSelectedTemplateId(e.target.value)}
                             disabled={isLoading}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm focus:border-brand-primary focus:outline-none text-text-primary"
                         >
                             {templates?.map((t) => (
                                 <option key={t.id} value={t.id}>

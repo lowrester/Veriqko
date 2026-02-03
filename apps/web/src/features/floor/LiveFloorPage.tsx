@@ -53,10 +53,10 @@ export function LiveFloorPage() {
                     {stations.map((station: any) => (
                         <div
                             key={station.id}
-                            className="w-80 flex flex-col bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700"
+                            className="w-80 flex flex-col bg-bg-secondary rounded-xl border border-border"
                         >
                             {/* Column Header */}
-                            <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-xl sticky top-0">
+                            <div className="p-3 border-b border-border bg-bg-primary rounded-t-xl sticky top-0">
                                 <div className="flex items-center justify-between mb-1">
                                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                                         {getStationIcon(station.type)}
@@ -82,7 +82,7 @@ export function LiveFloorPage() {
                                         <Link
                                             key={job.id}
                                             to={`/job/${job.id}/run`}
-                                            className="block p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md hover:border-brand-primary transition-all group"
+                                            className="block p-3 bg-bg-primary border border-border rounded-lg shadow-sm hover:shadow-md hover:border-brand-primary transition-all group"
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className="font-mono font-medium text-brand-primary group-hover:text-brand-secondary transition-colors">

@@ -20,6 +20,9 @@ import { AdminPage } from '@/features/admin/AdminPage'
 import { StationsPage } from '@/features/admin/StationsPage'
 import { TemplatesPage } from '@/features/admin/TemplatesPage'
 import { DeviceTypesPage } from '@/features/admin/DeviceTypesPage'
+import { SettingsLayout } from '@/features/settings/SettingsLayout'
+import { PrintersPage } from '@/features/settings/PrintersPage'
+import { LabelLayoutsPage } from '@/features/settings/LabelLayoutsPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -108,6 +111,24 @@ function App() {
           <Route path="users" element={<UsersPage />} />
           <Route path="users/new" element={<NewUserPage />} />
           <Route path="users/:id" element={<UserDetailPage />} />
+
+          {/* Settings */}
+          <Route
+            path="settings"
+            element={
+              <RequireRole anyOf={['admin', 'supervisor']}>
+                <SettingsLayout />
+              </RequireRole>
+            }
+          >
+            <Route index element={<Navigate to="printers" />} />
+            <Route path="printers" element={<PrintersPage />} />
+            <Route path="labels" element={<LabelLayoutsPage />} />
+
+            {/* Alias existing admin pages into settings for better UX */}
+            <Route path="users" element={<UsersPage />} />
+            <Route path="devices" element={<DeviceTypesPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

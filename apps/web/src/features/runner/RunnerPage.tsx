@@ -112,7 +112,7 @@ export function RunnerPage() {
             </div>
 
             {/* Progress */}
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="bg-bg-primary rounded-lg p-4 shadow-sm border border-border">
                 <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600 font-medium">{completedSteps} of {steps.length} steps complete</span>
                     <span className="text-blue-600 font-bold">{Math.round(progress)}%</span>
@@ -128,7 +128,7 @@ export function RunnerPage() {
             {/* Steps List */}
             <div className="space-y-4">
                 {steps.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <div className="text-center py-12 bg-bg-secondary rounded-lg border border-dashed border-border">
                         <p className="text-gray-500">No test steps configured for this device type.</p>
                     </div>
                 ) : (

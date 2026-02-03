@@ -42,8 +42,14 @@ export const NAV_ITEMS: NavItem[] = [
     {
         label: 'Administration',
         path: '/admin',
-        icon: 'Settings',
+        icon: 'Menu',
         roles: ['admin'],
+    },
+    {
+        label: 'Settings',
+        path: '/settings',
+        icon: 'Settings',
+        roles: ['admin', 'supervisor'],
     },
 ]
 
