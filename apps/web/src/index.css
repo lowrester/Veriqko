@@ -56,17 +56,15 @@ body {
 /* Tablet-first touch targets */
 @layer components {
   .btn {
-    @apply min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg font-medium
-           transition-colors duration-150 ease-in-out
-           focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg font-medium transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
   .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply btn bg-brand-primary text-white hover:bg-brand-secondary focus:ring-brand-light;
   }
 
   .btn-secondary {
-    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+    @apply btn bg-bg-secondary text-text-primary hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-500 border border-border;
   }
 
   .btn-danger {
@@ -78,52 +76,72 @@ body {
   }
 
   .input {
-    @apply min-h-[44px] w-full px-3 py-2 border border-gray-300 rounded-lg
-           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply min-h-[44px] w-full px-3 py-2 bg-bg-primary text-text-primary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent placeholder:text-text-secondary;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4;
+    @apply bg-bg-primary text-text-primary rounded-xl shadow-sm border border-border p-4;
   }
 
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
+  /* Status Badges - Keep specific colors for status but adapt backgrounds */
   .badge-intake {
-    @apply badge bg-yellow-100 text-yellow-800;
+    @apply badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300;
   }
 
   .badge-reset {
-    @apply badge bg-orange-100 text-orange-800;
+    @apply badge bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300;
   }
 
   .badge-functional {
-    @apply badge bg-blue-100 text-blue-800;
+    @apply badge bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300;
   }
 
   .badge-qc {
-    @apply badge bg-purple-100 text-purple-800;
+    @apply badge bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300;
   }
 
   .badge-completed {
-    @apply badge bg-green-100 text-green-800;
+    @apply badge bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
   }
 
   .badge-failed {
-    @apply badge bg-red-100 text-red-800;
+    @apply badge bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
   }
 
   .badge-on_hold {
-    @apply badge bg-gray-100 text-gray-800;
+    @apply badge bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300;
   }
 }
 
 /* Workflow status colors */
-.status-intake { @apply text-yellow-600; }
-.status-reset { @apply text-orange-600; }
-.status-functional { @apply text-blue-600; }
-.status-qc { @apply text-purple-600; }
-.status-completed { @apply text-green-600; }
-.status-failed { @apply text-red-600; }
-.status-on_hold { @apply text-gray-600; }
+.status-intake {
+  @apply text-yellow-600;
+}
+
+.status-reset {
+  @apply text-orange-600;
+}
+
+.status-functional {
+  @apply text-blue-600;
+}
+
+.status-qc {
+  @apply text-purple-600;
+}
+
+.status-completed {
+  @apply text-green-600;
+}
+
+.status-failed {
+  @apply text-red-600;
+}
+
+.status-on_hold {
+  @apply text-gray-600;
+}
