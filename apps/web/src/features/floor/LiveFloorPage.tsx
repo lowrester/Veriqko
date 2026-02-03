@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { statsApi } from '@/features/stats/statsService'
-import { STATUS_LABELS, formatDate } from '@/types'
 import { RotateCw, Monitor, Gamepad2, Box } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -90,8 +89,8 @@ export function LiveFloorPage() {
                                                     {job.serial_number}
                                                 </span>
                                                 <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${job.status === 'qc' ? 'bg-purple-100 text-purple-700' :
-                                                        job.status === 'failed' ? 'bg-red-100 text-red-700' :
-                                                            'bg-gray-100 text-gray-600'
+                                                    job.status === 'failed' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {job.status}
                                                 </span>

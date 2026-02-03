@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Printer, X, Download } from 'lucide-react'
-import { printingApi, LabelTemplate } from './printingService'
+import { Printer, X } from 'lucide-react'
+import { printingApi, LabelTemplate } from '../printingService'
 
 interface PrintLabelModalProps {
     isOpen: boolean
@@ -20,7 +20,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
     const [previewZpl, setPreviewZpl] = useState<string>('')
 
     // Fetch templates
-    const { data: templates, isLoading } = useQuery({
+    const { data: templates, isLoading } = useQuery<LabelTemplate[]>({
         queryKey: ['label-templates'],
         queryFn: printingApi.getTemplates,
     })
@@ -39,7 +39,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
         if (template) {
             const zpl = printingApi.generateZpl(template, {
                 serial_number: context.serial_number,
-                imei: context.imei,
+                imei: context.imei || '',
                 platform: context.platform,
                 model: context.model,
                 id: context.id
