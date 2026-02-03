@@ -25,7 +25,7 @@ else
     source .venv/bin/activate
 fi
 
-pip install -r requirements.txt
+pip install --no-cache-dir -r requirements.txt
 
 # 4. Database Migrations
 echo "🗄️  Running Migrations..."
