@@ -125,14 +125,8 @@ export function AppShell() {
                         >
                             <Menu className="w-6 h-6" />
                         </button>
-                        <button
 
-
-                            // ... existing imports ...
-
-                            // ... inside AppShell ...
-
-                            <div className="flex-1" />
+                        <div className="flex-1" />
                         <div className="flex items-center gap-4">
                             <ThemeSwitcher />
                         </div>
