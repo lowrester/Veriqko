@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
-revision = '005'
-down_revision = '004'
+revision = '005_add_ticket_id'
+down_revision = '004_add_imei_to_jobs'
 branch_labels = None
 depends_on = None
 
