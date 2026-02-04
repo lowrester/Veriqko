@@ -232,6 +232,7 @@ class JobHistory(Base, UUIDMixin):
     # Relationships
     job = relationship("Job", back_populates="history")
     station = relationship("Station", back_populates="job_history")
+    changed_by = relationship("User")
 
     def __repr__(self) -> str:
         return f"<JobHistory {self.job_id}: {self.from_status} -> {self.to_status}>"

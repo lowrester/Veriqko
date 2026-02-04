@@ -16,7 +16,6 @@ import { LiveFloorPage } from '@/features/floor/LiveFloorPage'
 import { UsersPage } from '@/features/users/UsersPage'
 import { NewUserPage } from '@/features/users/NewUserPage'
 import { UserDetailPage } from '@/features/users/UserDetailPage'
-import { AdminPage } from '@/features/admin/AdminPage'
 import { SystemPage } from '@/features/admin/SystemPage'
 import { StationsPage } from '@/features/admin/StationsPage'
 import { TemplatesPage } from '@/features/admin/TemplatesPage'
@@ -108,10 +107,16 @@ function App() {
           />
 
           {/* Admin */}
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="admin/stations" element={<StationsPage />} />
-          <Route path="admin/templates" element={<TemplatesPage />} />
-          <Route path="admin/devices" element={<DeviceTypesPage />} />
+          {/* Admin - Redirect old routes to new settings location if accessed directly? Or just keep them? 
+              For now we remove the old /admin prefix routes that are being moved. 
+              Users/Devices were already aliased, we just move Stations/Templates. 
+          */}
+          <Route path="admin" element={<Navigate to="/settings" replace />} />
+
+          {/* User management - kept top level for easy access or move? 
+              Ref says "Merge Admin with Settings", so let's move them fully under settings visually but keep route if needed. 
+              Actually, let's keep top level Users as is for "User Management" but also have it in settings for config.
+          */}
           <Route path="users" element={<UsersPage />} />
           <Route path="users/new" element={<NewUserPage />} />
           <Route path="users/:id" element={<UserDetailPage />} />
@@ -133,8 +138,11 @@ function App() {
             <Route path="system" element={<SystemPage />} />
 
             {/* Alias existing admin pages into settings for better UX */}
+            {/* Configuration Pages */}
             <Route path="users" element={<UsersPage />} />
             <Route path="devices" element={<DeviceTypesPage />} />
+            <Route path="stations" element={<StationsPage />} />
+            <Route path="templates" element={<TemplatesPage />} />
             {/* Client Portal */}
             <Route
               path="portal"

@@ -5,12 +5,14 @@ import { Printer, FileText, Users, Monitor, Network, Server } from 'lucide-react
 export const SettingsLayout: React.FC = () => {
     const navItems = [
         { to: '/settings/features', label: 'Platform Features', icon: <Monitor className="w-4 h-4" /> },
+        { to: '/settings/system', label: 'System', icon: <Server className="w-4 h-4" /> },
         { to: '/settings/printers', label: 'Printers', icon: <Printer className="w-4 h-4" /> },
         { to: '/settings/labels', label: 'Label Layouts', icon: <FileText className="w-4 h-4" /> },
         { to: '/settings/integrations', label: 'Integrations', icon: <Network className="w-4 h-4" /> },
         { to: '/settings/users', label: 'Users', icon: <Users className="w-4 h-4" /> },
         { to: '/settings/devices', label: 'Device Types', icon: <Monitor className="w-4 h-4" /> },
-        { to: '/settings/system', label: 'System', icon: <Server className="w-4 h-4" /> },
+        { to: '/settings/stations', label: 'Stations', icon: <Monitor className="w-4 h-4" /> },
+        { to: '/settings/templates', label: 'Test Templates', icon: <FileText className="w-4 h-4" /> },
     ];
 
     return (

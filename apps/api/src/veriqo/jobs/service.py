@@ -171,6 +171,7 @@ class JobRepository:
         """Get job history entries."""
         stmt = (
             select(JobHistory)
+            .options(selectinload(JobHistory.changed_by))
             .where(JobHistory.job_id == job_id)
             .order_by(JobHistory.changed_at.desc())
         )

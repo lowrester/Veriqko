@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, desc, and_
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from veriqo.db.base import get_session
 from veriqo.users.auth import get_current_user
-from veriqo.jobs.models import Job, JobStatus
+from veriqo.jobs.models import Job, JobStatus, TestResult, TestResultStatus, TestStep
+from veriqo.devices.models import Device
 from veriqo.users.models import User
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -29,7 +30,7 @@ async def get_dashboard_stats(
         func.sum(case((Job.status.in_([
             JobStatus.INTAKE, 
             JobStatus.RESET, 
-            JobStatus.FUNCTIONAL_TEST, 
+            JobStatus.FUNCTIONAL, 
             JobStatus.QC
         ]), 1), else_=0)).label("in_progress")
     )
@@ -136,3 +137,80 @@ async def get_floor_status(
         })
         
     return floor_view
+
+@router.get("/defects")
+async def get_defect_heatmap(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> List[Dict[str, Any]]:
+    """
+    Get defect heatmap aggregated by Device Model and Test Step.
+    Returns list of { model, test_step, count }.
+    """
+    # Query: Count failed TestResults grouped by Job->Device->Model and TestStep->Name
+    query = (
+        select(
+            Device.model,
+            TestStep.name.label("test_step"),
+            func.count(TestResult.id).label("failure_count")
+        )
+        .select_from(TestResult)
+        .join(TestResult.job)
+        .join(Job.device)
+        .join(TestResult.test_step)
+        .where(TestResult.status == TestResultStatus.FAIL)
+        .group_by(Device.model, TestStep.name)
+        .order_by(func.count(TestResult.id).desc())
+        .limit(100)
+    )
+    
+    result = await session.execute(query)
+    rows = result.all()
+    
+    return [
+        {
+            "model": row.model,
+            "test_step": row.test_step,
+            "count": row.failure_count
+        } for row in rows
+    ]
+
+@router.get("/technicians")
+async def get_technician_leaderboard(
+    days: int = 7,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> List[Dict[str, Any]]:
+    """
+    Get technician efficiency leaderboard for the last N days.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Query: Jobs completed per assigned technician in period
+    query = (
+        select(
+            User.full_name,
+            func.count(Job.id).label("jobs_completed")
+        )
+        .select_from(Job)
+        .join(Job.assigned_technician)
+        .where(
+            and_(
+                Job.status == JobStatus.COMPLETED,
+                Job.completed_at >= cutoff
+            )
+        )
+        .group_by(User.id, User.full_name)
+        .order_by(func.count(Job.id).desc())
+        .limit(10)
+    )
+    
+    result = await session.execute(query)
+    rows = result.all()
+    
+    return [
+        {
+            "name": row.full_name,
+            "jobs_completed": row.jobs_completed
+        } for row in rows
+    ]

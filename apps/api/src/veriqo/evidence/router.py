@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from veriqo.config import get_settings
 from veriqo.db.base import get_db
@@ -158,7 +159,11 @@ async def get_evidence(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     """Get evidence metadata."""
-    stmt = select(Evidence).where(Evidence.id == evidence_id)
+    stmt = (
+        select(Evidence)
+        .options(selectinload(Evidence.captured_by))
+        .where(Evidence.id == evidence_id)
+    )
     result = await db.execute(stmt)
     evidence = result.scalar_one_or_none()
 
@@ -180,7 +185,7 @@ async def get_evidence(
         mime_type=evidence.mime_type,
         sha256_hash=evidence.sha256_hash,
         captured_at=evidence.captured_at,
-        captured_by_name="Unknown",  # TODO: Load user
+        captured_by_name=evidence.captured_by.full_name if evidence.captured_by else "Unknown",
         caption=evidence.caption,
         download_url=f"{settings.base_url}/api/v1/evidence/{evidence.id}/download",
     )

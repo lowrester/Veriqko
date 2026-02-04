@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { statsApi } from '@/features/stats/statsService'
+import { stats } from '@/api/stats'
 import { RotateCw, Monitor, Gamepad2, Box } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function LiveFloorPage() {
     const { data: stations = [], isLoading, refetch, isRefetching } = useQuery({
         queryKey: ['stats', 'floor'],
-        queryFn: statsApi.getFloorStatus,
+        queryFn: stats.getFloor,
         refetchInterval: 15000, // Poll every 15 seconds for live view
     })
 

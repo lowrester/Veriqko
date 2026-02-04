@@ -1,6 +1,8 @@
+import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { statsApi } from '@/features/stats/statsService'
+import { stats } from '@/api/stats'
+import { AnalyticsView } from './AnalyticsView'
 import { useAuthStore } from '@/stores/authStore'
 import { STATUS_LABELS, formatDate } from '@/types'
 import {
@@ -11,20 +13,23 @@ import {
   Plus,
   ArrowRight,
   TrendingUp,
-  RotateCw
+  RotateCw,
+  LayoutDashboard,
+  BarChart
 } from 'lucide-react'
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user)
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'analytics'>('overview')
 
   const { data: dashboardData, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['stats', 'dashboard'],
-    queryFn: statsApi.getDashboardStats,
+    queryFn: stats.getDashboard,
     refetchInterval: 30000, // Poll every 30 seconds
   })
 
   // Default empty state
-  const stats = dashboardData?.counts || { total: 0, in_progress: 0, completed: 0, failed: 0 }
+  const statsData = dashboardData?.counts || { total: 0, in_progress: 0, completed: 0, failed: 0 }
   const metrics = dashboardData?.metrics || { yield_rate: 0 }
   const recentJobs = dashboardData?.recent_activity || []
 
@@ -38,119 +43,149 @@ export function DashboardPage() {
           </h1>
           <p className="text-text-secondary">Here is your overview for today.</p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className={`p-2 rounded-full hover:bg-bg-secondary transition-all ${isRefetching ? 'animate-spin' : ''}`}
-          title="Refresh Data"
-        >
-          <RotateCw className="w-5 h-5 text-gray-500" />
-        </button>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard
-          icon={Clipboard}
-          label="Total Jobs"
-          value={stats.total}
-          color="blue"
-        />
-        <StatCard
-          icon={Clock}
-          label="In Progress"
-          value={stats.in_progress}
-          color="yellow"
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Completed"
-          value={stats.completed}
-          color="green"
-        />
-        <StatCard
-          icon={AlertCircle}
-          label="Failed"
-          value={stats.failed}
-          color="red"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Pass Rate"
-          value={`${metrics.yield_rate}%`}
-          color="purple"
-        />
-      </div>
-
-      {/* Quick actions */}
-      <div className="card">
-        <h2 className="font-semibold text-text-primary mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/jobs/new" className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            New Job
-          </Link>
-          <Link to="/jobs" className="btn-secondary flex items-center gap-2">
-            View All Jobs
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-text-primary">Recent Activity</h2>
-          <Link
-            to="/jobs"
-            className="text-sm text-blue-600 hover:text-blue-700"
+        <div className="flex items-center gap-2">
+          <div className="flex bg-bg-secondary p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview'
+                  ? 'bg-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+                }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'analytics'
+                  ? 'bg-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+                }`}
+            >
+              <BarChart className="w-4 h-4" />
+              Analytics
+            </button>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className={`p-2 rounded-full hover:bg-bg-secondary transition-all ${isRefetching ? 'animate-spin' : ''}`}
+            title="Refresh Data"
           >
-            View All
-          </Link>
+            <RotateCw className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
-
-        {isLoading ? (
-          <div className="text-center py-8 text-gray-500">Loading...</div>
-        ) : recentJobs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No activity yet.{' '}
-            <Link to="/jobs/new" className="text-blue-600 hover:underline">
-              Start processing
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recentJobs.map((job) => (
-              <Link
-                key={job.id}
-                to={`/job/${job.id}/run`}
-                className="flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-bg-secondary transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-text-primary">
-                      {job.serial_number}
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      {job.platform} {job.model}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`badge-${job.status}`}>
-                    {STATUS_LABELS[job.status as keyof typeof STATUS_LABELS] || job.status}
-                  </span>
-                  <span className="text-sm text-gray-500 hidden sm:block">
-                    {formatDate(job.updated_at)}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
       </div>
+
+      {activeTab === 'analytics' ? (
+        <AnalyticsView />
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatCard
+              icon={Clipboard}
+              label="Total Jobs"
+              value={statsData.total}
+              color="blue"
+            />
+            <StatCard
+              icon={Clock}
+              label="In Progress"
+              value={statsData.in_progress}
+              color="yellow"
+            />
+            <StatCard
+              icon={CheckCircle}
+              label="Completed"
+              value={statsData.completed}
+              color="green"
+            />
+            <StatCard
+              icon={AlertCircle}
+              label="Failed"
+              value={statsData.failed}
+              color="red"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Pass Rate"
+              value={`${metrics.yield_rate}%`}
+              color="purple"
+            />
+          </div>
+
+          {/* Quick actions */}
+          <div className="card">
+            <h2 className="font-semibold text-text-primary mb-4">Quick Actions</h2>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/jobs/new" className="btn-primary flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                New Job
+              </Link>
+              <Link to="/jobs" className="btn-secondary flex items-center gap-2">
+                View All Jobs
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-text-primary">Recent Activity</h2>
+              <Link
+                to="/jobs"
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                View All
+              </Link>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-500">Loading...</div>
+            ) : recentJobs.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No activity yet.{' '}
+                <Link to="/jobs/new" className="text-blue-600 hover:underline">
+                  Start processing
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentJobs.map((job) => (
+                  <Link
+                    key={job.id}
+                    to={`/job/${job.id}/run`}
+                    className="flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-bg-secondary transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-text-primary">
+                          {job.serial_number}
+                        </p>
+                        <p className="text-sm text-text-secondary">
+                          {job.platform} {job.model}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`badge-${job.status}`}>
+                        {STATUS_LABELS[job.status as keyof typeof STATUS_LABELS] || job.status}
+                      </span>
+                      <span className="text-sm text-gray-500 hidden sm:block">
+                        {formatDate(job.updated_at)}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

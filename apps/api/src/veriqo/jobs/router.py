@@ -225,7 +225,7 @@ async def get_job_history(
             id=h.id,
             from_status=h.from_status.value if h.from_status else None,
             to_status=h.to_status.value,
-            changed_by_name="Unknown",  # TODO: Load user names
+            changed_by_name=h.changed_by.full_name if h.changed_by else "Unknown",
             changed_at=h.changed_at,
             notes=h.notes,
         )
