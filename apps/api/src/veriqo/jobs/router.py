@@ -35,7 +35,8 @@ def _job_to_response(job) -> JobResponse:
         status=job.status.value,
         device={
             "id": job.device.id,
-            "platform": job.device.platform,
+            "brand": job.device.brand,
+            "device_type": job.device.device_type,
             "model": job.device.model,
         }
         if job.device
@@ -98,7 +99,8 @@ async def list_jobs(
             id=job.id,
             serial_number=job.serial_number,
             status=job.status.value,
-            device_platform=job.device.platform if job.device else None,
+            device_brand=job.device.brand if job.device else None,
+            device_type=job.device.device_type if job.device else None,
             device_model=job.device.model if job.device else None,
             assigned_technician_name=job.assigned_technician.full_name
             if job.assigned_technician

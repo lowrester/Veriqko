@@ -64,7 +64,8 @@ async def get_dashboard_stats(
                 "id": str(job.id),
                 "serial_number": job.serial_number,
                 "status": job.status,
-                "platform": job.device.platform if job.device else "Unknown",  # Assuming eager load or simple access
+                "brand": job.device.brand if job.device else "Unknown",
+                "device_type": job.device.device_type if job.device else "Unknown",
                 "model": job.device.model if job.device else "Unknown",
                 "updated_at": job.updated_at
             } for job in recent_jobs
@@ -108,7 +109,8 @@ async def get_floor_status(
             "id": str(job.id),
             "serial_number": job.serial_number,
             "status": job.status,
-            "platform": job.device.platform if job.device else "Unknown",
+            "brand": job.device.brand if job.device else "Unknown",
+            "device_type": job.device.device_type if job.device else "Unknown",
             "model": job.device.model if job.device else "Unknown",
             "updated_at": job.updated_at,
             "batches": job.batch_id

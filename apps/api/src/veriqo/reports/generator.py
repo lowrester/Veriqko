@@ -39,7 +39,8 @@ class ReportData:
 
     job_id: str
     serial_number: str
-    device_platform: str
+    device_brand: str
+    device_type: str
     device_model: str
 
     # Workflow data
@@ -206,7 +207,8 @@ class PDFReportGenerator:
 
         info_data = [
             ["Serial Number:", data.serial_number],
-            ["Platform:", data.device_platform],
+            ["Brand:", data.device_brand],
+            ["Type:", data.device_type],
             ["Model:", data.device_model],
             ["Intake Date:", data.intake_date.strftime("%Y-%m-%d %H:%M")],
             ["Technician:", data.technician_name],

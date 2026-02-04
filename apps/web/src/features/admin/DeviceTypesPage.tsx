@@ -5,7 +5,8 @@ import { api } from '@/api/client'
 
 interface Device {
     id: string
-    platform: string
+    brand: string
+    device_type: string
     model: string
     model_number?: string
     test_config: Record<string, any>
@@ -16,7 +17,8 @@ export function DeviceTypesPage() {
     const [isCreating, setIsCreating] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const [formData, setFormData] = useState({
-        platform: '',
+        brand: '',
+        device_type: '',
         model: '',
         model_number: '',
     })
@@ -33,7 +35,7 @@ export function DeviceTypesPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['devices'] })
             setIsCreating(false)
-            setFormData({ platform: '', model: '', model_number: '' })
+            setFormData({ brand: '', device_type: '', model: '', model_number: '' })
         },
     })
 
@@ -51,7 +53,8 @@ export function DeviceTypesPage() {
     }
 
     const filteredDevices = devices.filter(d =>
-        d.platform.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.device_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.model.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
@@ -75,39 +78,48 @@ export function DeviceTypesPage() {
                 <div className="card border-2 border-orange-100 animate-in slide-in-from-top-2">
                     <h2 className="font-semibold text-gray-900 mb-4">Add New Device Type</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div>
-                                <label className="label">Platform</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.platform}
-                                    onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g. PlayStation"
-                                />
-                            </div>
-                            <div>
-                                <label className="label">Model</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.model}
-                                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g. PS5 Digital"
-                                />
-                            </div>
-                            <div>
-                                <label className="label">Model Number (Optional)</label>
-                                <input
-                                    type="text"
-                                    value={formData.model_number}
-                                    onChange={(e) => setFormData({ ...formData, model_number: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g. CFI-1000"
-                                />
-                            </div>
+                        <div>
+                            <label className="label">Brand</label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.brand}
+                                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                                className="input"
+                                placeholder="e.g. Apple"
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Device Type</label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.device_type}
+                                onChange={(e) => setFormData({ ...formData, device_type: e.target.value })}
+                                className="input"
+                                placeholder="e.g. Mobile"
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Model</label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.model}
+                                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                                className="input"
+                                placeholder="e.g. iPhone 13"
+                            />
+                        </div>
+                        <div>
+                            <label className="label">Model Number (Optional)</label>
+                            <input
+                                type="text"
+                                value={formData.model_number}
+                                onChange={(e) => setFormData({ ...formData, model_number: e.target.value })}
+                                className="input"
+                                placeholder="e.g. A2633"
+                            />
                         </div>
                         <div className="flex gap-3">
                             <button
@@ -154,7 +166,8 @@ export function DeviceTypesPage() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-bg-secondary text-text-secondary font-medium border-b border-border">
                             <tr>
-                                <th className="px-6 py-4">Platform</th>
+                                <th className="px-6 py-4">Brand</th>
+                                <th className="px-6 py-4">Type</th>
                                 <th className="px-6 py-4">Model</th>
                                 <th className="px-6 py-4">Model Number</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -163,7 +176,8 @@ export function DeviceTypesPage() {
                         <tbody className="divide-y divide-gray-100">
                             {filteredDevices.map((device) => (
                                 <tr key={device.id} className="hover:bg-bg-secondary/50 transition-colors group">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{device.platform}</td>
+                                    <td className="px-6 py-4 font-medium text-gray-900">{device.brand}</td>
+                                    <td className="px-6 py-4">{device.device_type}</td>
                                     <td className="px-6 py-4">{device.model}</td>
                                     <td className="px-6 py-4 text-gray-500 font-mono text-xs">
                                         {device.model_number || '-'}

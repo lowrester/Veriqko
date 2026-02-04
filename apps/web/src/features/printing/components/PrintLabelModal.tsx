@@ -11,7 +11,8 @@ interface PrintLabelModalProps {
         id: string
         serial_number: string
         imei?: string
-        platform: string
+        brand: string
+        device_type: string
         model: string
     }
 }
@@ -42,7 +43,8 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
             const zpl = printingApi.generateZpl(template, {
                 serial_number: context.serial_number,
                 imei: context.imei || '',
-                platform: context.platform,
+                brand: context.brand,
+                device_type: context.device_type,
                 model: context.model,
                 id: context.id
             })
@@ -144,7 +146,11 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500 text-sm">Model:</span>
-                                    <span className="font-medium">{context.platform} {context.model}</span>
+                                    <span className="font-medium">{context.brand} {context.model}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500 text-sm">Type:</span>
+                                    <span className="font-medium">{context.device_type}</span>
                                 </div>
                                 {context.imei && (
                                     <div className="flex justify-between">
@@ -170,7 +176,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
 
                     {/* Context Info */}
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Printing for <strong>{context.serial_number}</strong> ({context.platform} {context.model})
+                        Printing for <strong>{context.serial_number}</strong> ({context.brand} {context.model})
                         {context.imei && <span> [IMEI: {context.imei}]</span>}
                     </div>
 

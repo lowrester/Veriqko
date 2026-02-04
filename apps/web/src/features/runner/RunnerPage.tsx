@@ -13,7 +13,8 @@ interface Job {
     ticket_id: number
     serial_number: string
     imei?: string
-    device_platform: string
+    brand: string
+    device_type: string
     device_model: string
     sla_due_at?: string // ISO date string
 }
@@ -144,7 +145,7 @@ export function RunnerPage() {
                     </div>
                     <div className="flex items-center gap-4 mt-1">
                         <h1 className="text-2xl font-bold text-gray-900">
-                            {job.device_platform} {job.device_model}
+                            {job.brand} {job.device_model}
                         </h1>
                         {features.sla_management && <SLATimer dueAt={job.sla_due_at} />}
                     </div>
@@ -224,7 +225,8 @@ export function RunnerPage() {
                         id: job.id,
                         serial_number: job.serial_number,
                         imei: job.imei,
-                        platform: job.device_platform,
+                        brand: job.brand,
+                        device_type: job.device_type,
                         model: job.device_model
                     }}
                 />

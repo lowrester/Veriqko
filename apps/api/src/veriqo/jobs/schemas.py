@@ -41,7 +41,8 @@ class DeviceSummary(BaseModel):
     """Device summary for job responses."""
 
     id: str
-    platform: str
+    brand: str
+    device_type: str
     model: str
 
     class Config:
@@ -121,7 +122,8 @@ class JobListResponse(BaseModel):
     id: str
     serial_number: str
     status: str
-    device_platform: Optional[str] = None
+    device_brand: Optional[str] = None
+    device_type: Optional[str] = None
     device_model: Optional[str] = None
     assigned_technician_name: Optional[str] = None
     customer_reference: Optional[str] = None

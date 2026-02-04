@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 
 class DeviceBase(BaseModel):
-    platform: str
+    brand: str
+    device_type: str
     model: str
     model_number: str | None = None
     test_config: dict = {}
@@ -10,7 +11,8 @@ class DeviceCreate(DeviceBase):
     pass
 
 class DeviceUpdate(BaseModel):
-    platform: str | None = None
+    brand: str | None = None
+    device_type: str | None = None
     model: str | None = None
     model_number: str | None = None
     test_config: dict | None = None

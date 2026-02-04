@@ -48,8 +48,8 @@ export function DashboardPage() {
             <button
               onClick={() => setActiveTab('overview')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview'
-                  ? 'bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
+                ? 'bg-card text-text-primary shadow-sm'
+                : 'text-text-secondary hover:text-text-primary'
                 }`}
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -58,8 +58,8 @@ export function DashboardPage() {
             <button
               onClick={() => setActiveTab('analytics')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'analytics'
-                  ? 'bg-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
+                ? 'bg-card text-text-primary shadow-sm'
+                : 'text-text-secondary hover:text-text-primary'
                 }`}
             >
               <BarChart className="w-4 h-4" />
@@ -167,7 +167,7 @@ export function DashboardPage() {
                           {job.serial_number}
                         </p>
                         <p className="text-sm text-text-secondary">
-                          {job.platform} {job.model}
+                          {job.brand} {job.model}
                         </p>
                       </div>
                     </div>

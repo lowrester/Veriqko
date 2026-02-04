@@ -119,7 +119,8 @@ async def create_report(
     report_data = ReportData(
         job_id=job.id,
         serial_number=job.serial_number,
-        device_platform=job.device.platform if job.device else "Unknown",
+        device_brand=job.device.brand if job.device else "Unknown",
+        device_type=job.device.device_type if job.device else "Unknown",
         device_model=job.device.model if job.device else "Unknown",
         intake_date=job.intake_started_at or job.created_at,
         completion_date=job.completed_at,

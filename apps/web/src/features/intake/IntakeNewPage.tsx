@@ -11,7 +11,8 @@ export function IntakeNewPage() {
     const [formData, setFormData] = useState({
         serial_number: '',
         imei: '',
-        platform: '',
+        brand: '',
+        device_type: '',
         model: '',
         customer_reference: '',
         batch_id: '',
@@ -86,37 +87,48 @@ export function IntakeNewPage() {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="label">Platform *</label>
-                        <select
-                            required
-                            value={formData.platform}
-                            onChange={(e) =>
-                                setFormData({ ...formData, platform: e.target.value })
-                            }
-                            className="input"
-                        >
-                            <option value="">Select Platform</option>
-                            <option value="playstation">PlayStation</option>
-                            <option value="xbox">Xbox</option>
-                            <option value="nintendo">Nintendo</option>
-                            <option value="mobile">Mobile Phone</option>
-                            <option value="tablet">Tablet</option>
-                        </select>
-                    </div>
+                <div>
+                    <label className="label">Brand *</label>
+                    <input
+                        type="text"
+                        required
+                        value={formData.brand}
+                        onChange={(e) =>
+                            setFormData({ ...formData, brand: e.target.value })
+                        }
+                        className="input"
+                        placeholder="e.g. Apple"
+                    />
+                </div>
 
-                    <div>
-                        <label className="label">Model *</label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.model}
-                            onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                            className="input"
-                            placeholder="e.g. PS5 Digital"
-                        />
-                    </div>
+                <div>
+                    <label className="label">Device Type *</label>
+                    <select
+                        required
+                        value={formData.device_type}
+                        onChange={(e) =>
+                            setFormData({ ...formData, device_type: e.target.value })
+                        }
+                        className="input"
+                    >
+                        <option value="">Select Type</option>
+                        <option value="Mobile">Mobile Phone</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Console">Games Console</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label className="label">Model *</label>
+                    <input
+                        type="text"
+                        required
+                        value={formData.model}
+                        onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                        className="input"
+                        placeholder="e.g. iPhone 13"
+                    />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -199,7 +211,8 @@ export function IntakeNewPage() {
                         id: createdJob.id,
                         serial_number: createdJob.serial_number,
                         imei: createdJob.imei || formData.imei,
-                        platform: createdJob.device?.platform || formData.platform,
+                        brand: createdJob.device?.brand || formData.brand,
+                        device_type: createdJob.device?.device_type || formData.device_type,
                         model: createdJob.device?.model || formData.model
                     }}
                 />

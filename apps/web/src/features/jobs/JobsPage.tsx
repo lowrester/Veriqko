@@ -28,7 +28,8 @@ export function JobsPage() {
   const filteredJobs = jobs.filter(
     (job) =>
       job.serial_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.device_platform?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.device_brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.device_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.device_model?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -56,7 +57,7 @@ export function JobsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search serial number, platform..."
+              placeholder="Search serial number, brand, type..."
               className="input pl-10"
             />
           </div>
@@ -127,7 +128,7 @@ export function JobsPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">
-                      {job.device_platform} {job.device_model}
+                      {job.device_brand} {job.device_model}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`badge-${job.status}`}>
@@ -147,6 +148,6 @@ export function JobsPage() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }

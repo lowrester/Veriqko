@@ -73,7 +73,7 @@ export function SearchPage() {
                                 <div>
                                     <p className="font-medium text-text-primary">{job.serial_number}</p>
                                     <p className="text-sm text-text-secondary">
-                                        {job.device_platform} {job.device_model}
+                                        {job.device_brand} {job.device_model}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">

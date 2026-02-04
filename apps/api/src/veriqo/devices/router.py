@@ -18,7 +18,7 @@ async def list_devices(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     """List all device types."""
-    stmt = select(Device).order_by(Device.platform, Device.model)
+    stmt = select(Device).order_by(Device.brand, Device.model)
     result = await db.execute(stmt)
     return result.scalars().all()
 

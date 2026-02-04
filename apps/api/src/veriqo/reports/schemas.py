@@ -49,7 +49,8 @@ class PublicReportResponse(BaseModel):
     """Public report access response."""
 
     job_serial_number: str
-    device_platform: str
+    device_brand: str
+    device_type: str
     device_model: str
     status: str
     generated_at: datetime

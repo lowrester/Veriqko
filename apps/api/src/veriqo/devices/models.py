@@ -14,9 +14,10 @@ class Device(Base, UUIDMixin, TimestampMixin):
 
     __tablename__ = "devices"
 
-    platform: Mapped[str] = mapped_column(String(50), nullable=False)  # playstation, xbox, switch
-    model: Mapped[str] = mapped_column(String(100), nullable=False)  # PS5 Digital, Xbox Series X
-    model_number: Mapped[str | None] = mapped_column(String(50), nullable=True)  # CFI-1015A
+    brand: Mapped[str] = mapped_column(String(50), nullable=False)  # Apple, Samsung, Sony
+    device_type: Mapped[str] = mapped_column(String(50), nullable=False)  # Mobile, Tablet, Console
+    model: Mapped[str] = mapped_column(String(100), nullable=False)  # iPhone 13, Galaxy S21, PS5
+    model_number: Mapped[str | None] = mapped_column(String(50), nullable=True)  # A2633, SM-G991B, CFI-1015A
 
     # Device-specific test configuration
     test_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
@@ -30,4 +31,4 @@ class Device(Base, UUIDMixin, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<Device {self.platform} {self.model}>"
+        return f"<Device {self.brand} {self.model}>"

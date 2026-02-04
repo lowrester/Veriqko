@@ -6,7 +6,8 @@ export interface Job {
   status: string
   device?: {
     id: string
-    platform: string
+    brand: string
+    device_type: string
     model: string
   }
   assigned_technician?: {
@@ -41,7 +42,8 @@ export interface JobListItem {
   id: string
   serial_number: string
   status: string
-  device_platform?: string
+  device_brand?: string
+  device_type?: string
   device_model?: string
   assigned_technician_name?: string
   customer_reference?: string

@@ -14,7 +14,8 @@ export interface DashboardStats {
         id: string;
         serial_number: string;
         status: string;
-        platform: string;
+        brand: string;
+        device_type: string;
         model: string;
         updated_at: string;
     }>;

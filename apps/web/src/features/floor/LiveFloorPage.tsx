@@ -96,7 +96,7 @@ export function LiveFloorPage() {
                                                 </span>
                                             </div>
                                             <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                                                {job.platform}
+                                                {job.brand}
                                             </div>
                                             <div className="text-xs text-gray-500 mb-2 truncate">
                                                 {job.model}
