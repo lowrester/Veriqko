@@ -1,6 +1,6 @@
 #!/bin/bash
 #===============================================================================
-# Update Veriqo Deployment
+# Update Veriqko Deployment
 #
 # Pulls latest code from GitHub and updates the running application
 #
@@ -18,39 +18,39 @@ NC='\033[0m'
 log() { echo -e "${GREEN}[UPDATE]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
-VERIQO_HOME="/opt/veriqo"
+VERIQKO_HOME="/opt/veriqko"
 
-log "Updating Veriqo deployment..."
+log "Updating Veriqko deployment..."
 
 # Pull latest code
 log "Pulling latest code from GitHub..."
-cd $VERIQO_HOME/app
-sudo -u veriqo git pull origin main
+cd $VERIQKO_HOME/app
+sudo -u veriqko git pull origin main
 
 # Update backend dependencies
 log "Updating backend dependencies..."
-cd $VERIQO_HOME/app/apps/api
-sudo -u veriqo ./venv/bin/pip install --upgrade pip
-sudo -u veriqo ./venv/bin/pip install -r requirements.txt
+cd $VERIQKO_HOME/app/apps/api
+sudo -u veriqko ./venv/bin/pip install --upgrade pip
+sudo -u veriqko ./venv/bin/pip install -r requirements.txt
 
 # Run database migrations
 log "Running database migrations..."
-sudo -u veriqo ./venv/bin/alembic upgrade head
+sudo -u veriqko ./venv/bin/alembic upgrade head
 
 # Build frontend
 log "Building frontend..."
-cd $VERIQO_HOME/app/apps/web
-sudo -u veriqo npm install
-sudo -u veriqo npm run build
+cd $VERIQKO_HOME/app/apps/web
+sudo -u veriqko npm install
+sudo -u veriqko npm run build
 
 # Restart services
 log "Restarting services..."
-sudo systemctl restart veriqo-api
+sudo systemctl restart veriqko-api
 sudo systemctl reload nginx
 
 # Check status
 log "Checking service status..."
-sudo systemctl status veriqo-api --no-pager || true
+sudo systemctl status veriqko-api --no-pager || true
 
 echo ""
 echo "=============================================="

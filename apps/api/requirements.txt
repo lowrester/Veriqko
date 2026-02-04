@@ -1,4 +1,4 @@
-# Veriqo API Requirements
+# Veriqko API Requirements
 # Generated from pyproject.toml dependencies
 
 # Core Framework

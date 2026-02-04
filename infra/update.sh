@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Veriqo Platform Unified Update Script
+# Veriqko Platform Unified Update Script
 # Usage: ./update.sh [--full]
 # --full: Forces a full reinstall of dependencies (removes node_modules)
 
@@ -10,13 +10,13 @@ if [ "$1" == "--full" ]; then
     FULL_UPDATE=true
 fi
 
-echo "🚀 Starting Veriqo Platform Update..."
+echo "🚀 Starting Veriqko Platform Update..."
 
 # Configuration
-APP_DIR="/opt/veriqo/app"
+APP_DIR="/opt/veriqko/app"
 WEB_DIR="$APP_DIR/apps/web"
 API_DIR="$APP_DIR/apps/api"
-VERIQO_USER="veriqo"
+VERIQKO_USER="veriqko"
 BRANCH="main"
 
 # Colors
@@ -34,20 +34,20 @@ fi
 cd "$APP_DIR" || exit 1
 
 echo -e "${BLUE}📥 Pulling latest code...${NC}"
-sudo -u "$VERIQO_USER" git fetch origin
-sudo -u "$VERIQO_USER" git reset --hard origin/$BRANCH
+sudo -u "$VERIQKO_USER" git fetch origin
+sudo -u "$VERIQKO_USER" git reset --hard origin/$BRANCH
 
 
 echo -e "${BLUE}🐍 Updating Backend...${NC}"
 cd "$API_DIR" || exit 1
 # Always ensure venv exists
 if [ ! -d ".venv" ]; then
-    sudo -u "$VERIQO_USER" python3 -m venv .venv
+    sudo -u "$VERIQKO_USER" python3 -m venv .venv
 fi
-sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/pip" install --no-cache-dir -r requirements.txt
+sudo -u "$VERIQKO_USER" "$API_DIR/.venv/bin/pip" install --no-cache-dir -r requirements.txt
 
 echo -e "${BLUE}🗄️ Running Migrations...${NC}"
-sudo -u "$VERIQO_USER" PYTHONPATH="$API_DIR/src" "$API_DIR/.venv/bin/alembic" upgrade head
+sudo -u "$VERIQKO_USER" PYTHONPATH="$API_DIR/src" "$API_DIR/.venv/bin/alembic" upgrade head
 
 echo -e "${BLUE}🎨 Updating Frontend...${NC}"
 cd "$WEB_DIR" || exit 1
@@ -57,11 +57,11 @@ if [ "$FULL_UPDATE" = true ]; then
     rm -rf node_modules dist
 fi
 
-sudo -u "$VERIQO_USER" npm install
-sudo -u "$VERIQO_USER" npm run build
+sudo -u "$VERIQKO_USER" npm install
+sudo -u "$VERIQKO_USER" npm run build
 
 echo -e "${BLUE}🔄 Restarting Services...${NC}"
-systemctl restart veriqo-api
+systemctl restart veriqko-api
 systemctl reload nginx
 
 # Health Check (Optional, requires curl)

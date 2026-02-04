@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "☢️  VERIQO REPAIR PROTOCOL INITIATED..."
+echo "☢️  VERIQKO REPAIR PROTOCOL INITIATED..."
 
 # 1. Stop Service to release file locks
-echo "🛑 Stopping Veriqo API Service..."
-sudo systemctl stop veriqo-api || echo "⚠️  Service was not running or could not be stopped."
+echo "🛑 Stopping Veriqko API Service..."
+sudo systemctl stop veriqko-api || echo "⚠️  Service was not running or could not be stopped."
 
 # 2. Clean Backend
 echo "🧹 Nuke Backend Environment..."

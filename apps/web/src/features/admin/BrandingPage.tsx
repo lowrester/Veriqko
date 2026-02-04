@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Save, Upload } from 'lucide-react';
 
 export const BrandingPage: React.FC = () => {
-    const [brandName, setBrandName] = useState('Veriqo');
+    const [brandName, setBrandName] = useState('Veriqko');
     const [primaryColor, setPrimaryColor] = useState('#2563eb');
 
     const handleSave = (e: React.FormEvent) => {
@@ -16,7 +16,7 @@ export const BrandingPage: React.FC = () => {
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">Branding Settings</h1>
                 <p className="text-muted-foreground">
-                    Customize the look and feel of your Veriqo instance.
+                    Customize the look and feel of your Veriqko instance.
                 </p>
             </div>
 

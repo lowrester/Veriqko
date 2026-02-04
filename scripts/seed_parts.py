@@ -9,8 +9,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../apps/api/src"))
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from veriqo.config import get_settings
-from veriqo.parts.models import Part
+from veriqko.config import get_settings
+from veriqko.parts.models import Part
 
 settings = get_settings()
 engine = create_async_engine(settings.database_url)

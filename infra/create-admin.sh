@@ -1,18 +1,18 @@
 #!/bin/bash
 #===============================================================================
-# Create Admin User for Veriqo
+# Create Admin User for Veriqko
 #
 # Usage:
 #   ./create-admin.sh [email] [password]
 #
 # If no arguments provided, uses defaults:
-#   Email: admin@veriqo.local
+#   Email: admin@veriqko.local
 #   Password: admin123
 #===============================================================================
 
 set -e
 
-ADMIN_EMAIL="${1:-admin@veriqo.local}"
+ADMIN_EMAIL="${1:-admin@veriqko.local}"
 ADMIN_PASSWORD="${2:-admin123}"
 
 echo "Creating admin user..."
@@ -22,10 +22,10 @@ echo "Email: $ADMIN_EMAIL"
 cd "$(dirname "$0")/../apps/api"
 
 # Generate password hash
-PASSWORD_HASH=$(./venv/bin/python3 -c "from veriqo.auth.password import hash_password; print(hash_password('$ADMIN_PASSWORD'))")
+PASSWORD_HASH=$(./venv/bin/python3 -c "from veriqko.auth.password import hash_password; print(hash_password('$ADMIN_PASSWORD'))")
 
 # Insert into database
-sudo -u postgres psql -d veriqo <<EOF
+sudo -u postgres psql -d veriqko <<EOF
 INSERT INTO users (id, email, password_hash, full_name, role, is_active, created_at, updated_at)
 VALUES (
     gen_random_uuid(),

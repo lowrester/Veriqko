@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Veriqo brand colors (dynamic)
+        // Veriqko brand colors (dynamic)
         brand: {
           primary: 'rgb(var(--brand-primary) / <alpha-value>)',
           secondary: 'rgb(var(--brand-secondary) / <alpha-value>)',

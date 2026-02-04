@@ -11,19 +11,21 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 import sys
 import os
 
-# Add src directory to path so we can import veriqo package
+# Add src directory to path so we can import veriqko package
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-from veriqo.config import get_settings
+from veriqko.config import get_settings
 
 # Import all models to ensure they are registered with Base
-from veriqo.db.base import Base
-from veriqo.users.models import User  # noqa: F401
-from veriqo.devices.models import Device  # noqa: F401
-from veriqo.stations.models import Station  # noqa: F401
-from veriqo.jobs.models import Job, JobHistory, TestResult, TestStep  # noqa: F401
-from veriqo.evidence.models import Evidence  # noqa: F401
-from veriqo.reports.models import Report  # noqa: F401
+from veriqko.db.base import Base
+from veriqko.users.models import User  # noqa: F401
+from veriqko.devices.models import Device  # noqa: F401
+from veriqko.stations.models import Station  # noqa: F401
+from veriqko.jobs.models import Job, JobHistory, TestResult, TestStep  # noqa: F401
+from veriqko.evidence.models import Evidence  # noqa: F401
+from veriqko.reports.models import Report  # noqa: F401
+from veriqko.printing.models import LabelTemplate, Printer  # noqa: F401
+from veriqko.settings.models import SystemSetting  # noqa: F401
 
 config = context.config
 

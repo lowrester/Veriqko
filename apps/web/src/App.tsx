@@ -38,10 +38,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 import { ThemeProvider } from '@/features/theme/ThemeContext'
+import { ToastContainer } from '@/components/ui/Toast'
 
 function App() {
   return (
     <ThemeProvider>
+      <ToastContainer />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 

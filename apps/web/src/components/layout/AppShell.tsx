@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { NAV_ITEMS, filterNavItems } from '@/lib/navModel'
 import { ThemeSwitcher } from '@/features/theme/ThemeSwitcher'
+import logo from '@/assets/logo.png'
 
 const ICON_MAP = {
     LayoutDashboard,
@@ -58,7 +59,9 @@ export function AppShell() {
                 <div className="flex flex-col h-full">
                     {/* Logo */}
                     <div className="flex items-center justify-between h-16 px-4 border-b border-border">
-                        <h1 className="text-xl font-bold text-text-primary">Veriqo</h1>
+                        <Link to="/" className="flex items-center">
+                            <img src={logo} alt="Veriqko" className="h-8 w-auto" />
+                        </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="lg:hidden p-2 rounded-md hover:bg-bg-secondary"
@@ -104,7 +107,7 @@ export function AppShell() {
                             </div>
                         </div>
                         <div className="text-[10px] text-gray-400 mb-2 pl-1 font-mono">
-                            Veriqo Platform v2.1.0
+                            Veriqko Platform v2.1.0
                         </div>
                         <button
                             onClick={handleLogout}

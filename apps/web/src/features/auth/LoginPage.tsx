@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/api/auth'
 import { AlertCircle, Loader2 } from 'lucide-react'
+import logo from '@/assets/logo.png'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -37,8 +38,8 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-bg-secondary px-4">
       <div className="w-full max-w-md">
         <div className="card">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-blue-600">Veriqo</h1>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <img src={logo} alt="Veriqko" className="h-12 w-auto mb-2" />
             <p className="text-gray-500 mt-1">Console Verification Platform</p>
           </div>
 

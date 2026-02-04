@@ -1,6 +1,6 @@
-# Veriqo Deployment Scripts
+# Veriqko Deployment Scripts
 
-Deploy Veriqo on Ubuntu Server (with or without Proxmox).
+Deploy Veriqko on Ubuntu Server (with or without Proxmox).
 
 ## Quick Start
 
@@ -9,15 +9,15 @@ Deploy Veriqo on Ubuntu Server (with or without Proxmox).
 Run this on any Ubuntu 22.04/24.04 server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | sudo bash
 ```
 
 Or with custom settings:
 
 ```bash
-export VERIQO_DOMAIN=veriqo.example.com
-export VERIQO_ADMIN_EMAIL=admin@example.com
-curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | sudo -E bash
+export VERIQKO_DOMAIN=veriqko.example.com
+export VERIQKO_ADMIN_EMAIL=admin@example.com
+curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | sudo -E bash
 ```
 
 ### Option 2: Proxmox VM Deployment
@@ -26,7 +26,7 @@ Run on Proxmox host:
 
 ```bash
 # Download and customize
-wget https://raw.githubusercontent.com/lowrester/Veriqo/claude/add-pdf-support-166IR/infra/deploy-proxmox.sh
+wget https://raw.githubusercontent.com/lowrester/Veriqko/claude/add-pdf-support-166IR/infra/deploy-proxmox.sh
 chmod +x deploy-proxmox.sh
 
 # Edit configuration (VM ID, name, resources)
@@ -40,11 +40,11 @@ nano deploy-proxmox.sh
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VERIQO_DOMAIN` | hostname | Domain for the application |
-| `VERIQO_DB_PASSWORD` | random | PostgreSQL password |
-| `VERIQO_JWT_SECRET` | random | JWT signing secret |
-| `VERIQO_ADMIN_EMAIL` | admin@domain | Admin user email |
-| `VERIQO_ADMIN_PASSWORD` | random | Admin user password |
+| `VERIQKO_DOMAIN` | hostname | Domain for the application |
+| `VERIQKO_DB_PASSWORD` | random | PostgreSQL password |
+| `VERIQKO_JWT_SECRET` | random | JWT signing secret |
+| `VERIQKO_ADMIN_EMAIL` | admin@domain | Admin user email |
+| `VERIQKO_ADMIN_PASSWORD` | random | Admin user password |
 
 ## What Gets Installed
 
@@ -83,7 +83,7 @@ nano deploy-proxmox.sh
 ### Check Services
 
 ```bash
-systemctl status veriqo-api
+systemctl status veriqko-api
 systemctl status nginx
 systemctl status postgresql
 ```
@@ -92,7 +92,7 @@ systemctl status postgresql
 
 ```bash
 # API logs
-journalctl -u veriqo-api -f
+journalctl -u veriqko-api -f
 
 # Nginx logs
 tail -f /var/log/nginx/access.log
@@ -110,17 +110,17 @@ sudo certbot --nginx -d your-domain.com
 ### Backup Database
 
 ```bash
-sudo -u postgres pg_dump veriqo > backup.sql
+sudo -u postgres pg_dump veriqko > backup.sql
 ```
 
 ## File Locations
 
 | Path | Description |
 |------|-------------|
-| `/opt/veriqo/app` | Application code |
-| `/opt/veriqo/data` | Evidence & reports |
-| `/opt/veriqo/logs` | Application logs |
-| `/root/veriqo-credentials.txt` | Generated credentials |
+| `/opt/veriqko/app` | Application code |
+| `/opt/veriqko/data` | Evidence & reports |
+| `/opt/veriqko/logs` | Application logs |
+| `/root/veriqko-credentials.txt` | Generated credentials |
 
 ## Troubleshooting
 
@@ -128,21 +128,21 @@ sudo -u postgres pg_dump veriqo > backup.sql
 
 ```bash
 # Check logs
-journalctl -u veriqo-api -n 50
+journalctl -u veriqko-api -n 50
 
 # Test manually
-cd /opt/veriqo/app/apps/api
-./venv/bin/uvicorn veriqo.main:app --host 127.0.0.1 --port 8000
+cd /opt/veriqko/app/apps/api
+./venv/bin/uvicorn veriqko.main:app --host 127.0.0.1 --port 8000
 ```
 
 ### Database connection issues
 
 ```bash
 # Test connection
-sudo -u postgres psql -d veriqo -c "SELECT 1"
+sudo -u postgres psql -d veriqko -c "SELECT 1"
 
 # Check credentials in .env
-cat /opt/veriqo/app/apps/api/.env
+cat /opt/veriqko/app/apps/api/.env
 ```
 
 ### Nginx errors

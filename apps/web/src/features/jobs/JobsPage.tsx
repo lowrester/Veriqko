@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { jobsApi } from '@/api/jobs'
 import { STATUS_LABELS, formatDate, JobStatus } from '@/types'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, Filter, AlertCircle } from 'lucide-react'
 
 const STATUSES: JobStatus[] = [
   'intake',
@@ -19,7 +19,7 @@ export function JobsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: jobs = [], isLoading } = useQuery({
+  const { data: jobs = [], isLoading, error } = useQuery({
     queryKey: ['jobs', statusFilter],
     queryFn: () => jobsApi.list({ status: statusFilter || undefined, limit: 100 }),
   })
@@ -83,7 +83,15 @@ export function JobsPage() {
 
       {/* Jobs list */}
       <div className="card p-0 overflow-hidden">
-        {isLoading ? (
+        {error ? (
+          <div className="text-center py-12">
+            <div className="flex flex-col items-center gap-2 text-red-600">
+              <AlertCircle className="w-8 h-8" />
+              <p className="font-medium">Kunde inte hämta jobb</p>
+              <p className="text-sm text-gray-500">Kontrollera din anslutning eller försök igen senare.</p>
+            </div>
+          </div>
+        ) : isLoading ? (
           <div className="text-center py-12 text-gray-500">Loading jobs...</div>
         ) : filteredJobs.length === 0 ? (
           <div className="text-center py-12 text-gray-500">

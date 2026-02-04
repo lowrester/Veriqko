@@ -23,12 +23,12 @@ export function StationsPage() {
     // Fetch stations
     const { data: stations = [], isLoading } = useQuery<Station[]>({
         queryKey: ['stations'],
-        queryFn: () => api.get('/admin/stations'),
+        queryFn: () => api.get('/stations'),
     })
 
     // Create Station
     const createMutation = useMutation({
-        mutationFn: (data: typeof formData) => api.post('/admin/stations', data),
+        mutationFn: (data: typeof formData) => api.post('/stations', data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stations'] })
             setIsCreating(false)
@@ -38,7 +38,7 @@ export function StationsPage() {
 
     // Delete Station
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => api.delete(`/admin/stations/${id}`),
+        mutationFn: (id: string) => api.delete(`/stations/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stations'] })
         },

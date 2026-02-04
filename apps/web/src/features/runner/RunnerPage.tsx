@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle, Printer, Clock } from 'lucide-react'
 import { api } from '@/api/client'
+import { useToastStore } from '@/stores/toastStore'
 import { StepCard } from './components/StepCard'
 import { PrintLabelModal } from '../printing/components/PrintLabelModal'
 import { PartsSelector, type PartUsage } from './components/PartsSelector'
@@ -97,12 +98,17 @@ export function RunnerPage() {
         enabled: !!jobId,
     })
 
+    const addToast = useToastStore((state) => state.addToast)
+
     // Submit result mutation
     const resultMutation = useMutation({
         mutationFn: ({ stepId, status, notes }: { stepId: string, status: string, notes?: string }) =>
             api.post(`/jobs/${jobId}/steps/${stepId}/result`, { status, notes }), // Mock endpoint
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['job', jobId, 'steps'] })
+        },
+        onError: () => {
+            addToast('Kunde inte spara testresultat.', 'error')
         }
     })
 
@@ -115,6 +121,9 @@ export function RunnerPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['job', jobId, 'steps'] })
+        },
+        onError: () => {
+            addToast('Kunde inte ladda upp fil.', 'error')
         }
     })
 

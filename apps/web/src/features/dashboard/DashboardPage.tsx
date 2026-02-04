@@ -22,7 +22,7 @@ export function DashboardPage() {
   const user = useAuthStore((state) => state.user)
   const [activeTab, setActiveTab] = React.useState<'overview' | 'analytics'>('overview')
 
-  const { data: dashboardData, isLoading, refetch, isRefetching } = useQuery({
+  const { data: dashboardData, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['stats', 'dashboard'],
     queryFn: stats.getDashboard,
     refetchInterval: 30000, // Poll every 30 seconds
@@ -141,7 +141,14 @@ export function DashboardPage() {
               </Link>
             </div>
 
-            {isLoading ? (
+            {error ? (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center gap-2 text-red-600">
+                  <AlertCircle className="w-6 h-6" />
+                  <p className="font-medium">Kunde inte hämta händelser</p>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="text-center py-8 text-gray-500">Loading...</div>
             ) : recentJobs.length === 0 ? (
               <div className="text-center py-8 text-gray-500">

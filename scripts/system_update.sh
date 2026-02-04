@@ -5,11 +5,11 @@
 TARGET_VERSION=$1
 [ -z "$TARGET_VERSION" ] && TARGET_VERSION="main"
 
-APP_DIR="/opt/veriqo/app"
-BACKUP_DIR="/opt/veriqo/backups"
+APP_DIR="/opt/veriqko/app"
+BACKUP_DIR="/opt/veriqko/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_PATH="$BACKUP_DIR/backup_$TIMESTAMP"
-STATUS_FILE="/opt/veriqo/update_status.json"
+STATUS_FILE="/opt/veriqko/update_status.json"
 
 # Helper to write status
 write_status() {
@@ -39,35 +39,35 @@ fi
 
 # 2. Stop Service
 write_status "Stopping Service..." 30
-sudo systemctl stop veriqo-api
+sudo systemctl stop veriqko-api
 
 # 3. Pull Code
 write_status "Pulling Update ($TARGET_VERSION)..." 40
 cd $APP_DIR
-sudo -u veriqo git fetch origin
-sudo -u veriqo git reset --hard origin/$TARGET_VERSION
+sudo -u veriqko git fetch origin
+sudo -u veriqko git reset --hard origin/$TARGET_VERSION
 if [ $? -ne 0 ]; then
     write_error "Git pull failed! Rolling back..."
     # Rollback logic here (restore backup)
     rm -rf $APP_DIR
     cp -r $BACKUP_PATH $APP_DIR
-    sudo systemctl start veriqo-api
+    sudo systemctl start veriqko-api
     exit 1
 fi
 
 # 4. Build & Install
 write_status "Building & Installing..." 60
 cd apps/web
-sudo -u veriqo npm install
-sudo -u veriqo npm run build
+sudo -u veriqko npm install
+sudo -u veriqko npm run build
 cd ../api
-sudo -u veriqo python3 -m venv .venv
-sudo -u veriqo .venv/bin/pip install --no-cache-dir -r requirements.txt
+sudo -u veriqko python3 -m venv .venv
+sudo -u veriqko .venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # 5. Migrations
 write_status "Running Migrations..." 80
 export PYTHONPATH=$APP_DIR/apps/api/src
-sudo -u veriqo .venv/bin/alembic upgrade head
+sudo -u veriqko .venv/bin/alembic upgrade head
 if [ $? -ne 0 ]; then
     write_error "Migration failed! Restoring backup..."
     # Full rollback would go here (complex for DB, requires pg_dump/restore which we skipped for MVP speed)
@@ -77,7 +77,7 @@ fi
 
 # 6. Restart
 write_status "Restarting Service..." 90
-sudo systemctl start veriqo-api
+sudo systemctl start veriqko-api
 
 # 7. Final Check
 sleep 5

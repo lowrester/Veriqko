@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# Veriqo Platform V2 Deployment Script
+# Veriqko Platform V2 Deployment Script
 # This script deploys the new platform version
 
-echo "🚀 Starting Veriqo Platform V2 deployment..."
+echo "🚀 Starting Veriqko Platform V2 deployment..."
 
 # Colors
 GREEN='\033[0;32m'
@@ -13,10 +13,10 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_DIR="/opt/veriqo/app"
+APP_DIR="/opt/veriqko/app"
 WEB_DIR="$APP_DIR/apps/web"
 API_DIR="$APP_DIR/apps/api"
-VERIQO_USER="veriqo"
+VERIQKO_USER="veriqko"
 BRANCH="main"
 
 # Check if running as root
@@ -36,23 +36,23 @@ cd "$APP_DIR" || exit 1
 
 echo -e "${BLUE}📥 Switching to branch $BRANCH...${NC}"
 # Fetch and checkout branch
-sudo -u "$VERIQO_USER" git fetch origin
-sudo -u "$VERIQO_USER" git reset --hard origin/$BRANCH
+sudo -u "$VERIQKO_USER" git fetch origin
+sudo -u "$VERIQKO_USER" git reset --hard origin/$BRANCH
 
 echo -e "${BLUE}📦 Cleaning generated files...${NC}"
 # Remove generated files to avoid conflicts
-sudo -u "$VERIQO_USER" rm -rf "$WEB_DIR/node_modules"
-sudo -u "$VERIQO_USER" rm -rf "$WEB_DIR/dist"
-sudo -u "$VERIQO_USER" rm -f "$WEB_DIR/package-lock.json"
+sudo -u "$VERIQKO_USER" rm -rf "$WEB_DIR/node_modules"
+sudo -u "$VERIQKO_USER" rm -rf "$WEB_DIR/dist"
+sudo -u "$VERIQKO_USER" rm -f "$WEB_DIR/package-lock.json"
 
 echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
 # Install properties
 cd "$WEB_DIR" || exit 1
-sudo -u "$VERIQO_USER" npm install
+sudo -u "$VERIQKO_USER" npm install
 
 echo -e "${BLUE}🔨 Building frontend...${NC}"
 # Build frontend
-sudo -u "$VERIQO_USER" npm run build
+sudo -u "$VERIQKO_USER" npm run build
 
 echo -e "${BLUE}🐍 Installing backend dependencies...${NC}"
 cd "$API_DIR" || exit 1
@@ -60,17 +60,17 @@ cd "$API_DIR" || exit 1
 # Ensure venv exists
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
-    sudo -u "$VERIQO_USER" python3 -m venv .venv
+    sudo -u "$VERIQKO_USER" python3 -m venv .venv
 fi
 
 # Install requirements
-sudo -u "$VERIQO_USER" "$API_DIR/.venv/bin/pip" install --no-cache-dir -r requirements.txt
+sudo -u "$VERIQKO_USER" "$API_DIR/.venv/bin/pip" install --no-cache-dir -r requirements.txt
 
 echo -e "${BLUE}🗄️ Running database migrations...${NC}"
-sudo -u "$VERIQO_USER" PYTHONPATH="$API_DIR/src" "$API_DIR/.venv/bin/alembic" upgrade head
+sudo -u "$VERIQKO_USER" PYTHONPATH="$API_DIR/src" "$API_DIR/.venv/bin/alembic" upgrade head
 
 echo -e "${BLUE}🔄 Restarting services...${NC}"
-systemctl restart veriqo-api
+systemctl restart veriqko-api
 systemctl reload nginx
 
 echo -e "${GREEN}✅ Platform V2 deployed successfully!${NC}"

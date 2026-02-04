@@ -1,8 +1,8 @@
 #!/bin/bash
 #===============================================================================
-# Veriqo Proxmox Deployment Script
+# Veriqko Proxmox Deployment Script
 #
-# This script creates an Ubuntu VM in Proxmox and deploys the Veriqo platform
+# This script creates an Ubuntu VM in Proxmox and deploys the Veriqko platform
 #
 # Usage:
 #   1. Run on Proxmox host: ./deploy-proxmox.sh
@@ -18,7 +18,7 @@ set -e
 
 # Configuration - EDIT THESE VALUES
 VMID="${VMID:-200}"
-VM_NAME="${VM_NAME:-veriqo}"
+VM_NAME="${VM_NAME:-veriqko}"
 VM_MEMORY="${VM_MEMORY:-4096}"
 VM_CORES="${VM_CORES:-2}"
 VM_DISK="${VM_DISK:-32G}"
@@ -29,19 +29,19 @@ STORAGE="${STORAGE:-local-lvm}"
 UBUNTU_VERSION="jammy"  # Ubuntu 22.04 LTS
 CLOUD_IMAGE_URL="https://cloud-images.ubuntu.com/${UBUNTU_VERSION}/current/${UBUNTU_VERSION}-server-cloudimg-amd64.img"
 
-# Veriqo Configuration
-VERIQO_DOMAIN="${VERIQO_DOMAIN:-veriqo.local}"
-VERIQO_DB_PASSWORD="${VERIQO_DB_PASSWORD:-$(openssl rand -base64 24)}"
-VERIQO_JWT_SECRET="${VERIQO_JWT_SECRET:-$(openssl rand -base64 48)}"
-VERIQO_ADMIN_EMAIL="${VERIQO_ADMIN_EMAIL:-admin@veriqo.local}"
-VERIQO_ADMIN_PASSWORD="${VERIQO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
+# Veriqko Configuration
+VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-veriqko.local}"
+VERIQKO_DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(openssl rand -base64 24)}"
+VERIQKO_JWT_SECRET="${VERIQKO_JWT_SECRET:-$(openssl rand -base64 48)}"
+VERIQKO_ADMIN_EMAIL="${VERIQKO_ADMIN_EMAIL:-admin@veriqko.local}"
+VERIQKO_ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
 
 echo "=============================================="
-echo "Veriqo Proxmox Deployment"
+echo "Veriqko Proxmox Deployment"
 echo "=============================================="
 echo "VM ID: $VMID"
 echo "VM Name: $VM_NAME"
-echo "Domain: $VERIQO_DOMAIN"
+echo "Domain: $VERIQKO_DOMAIN"
 echo ""
 
 # Check if running on Proxmox
@@ -81,11 +81,11 @@ qm resize $VMID scsi0 $VM_DISK
 # Generate cloud-init user data
 CLOUD_INIT_USER=$(cat <<'CLOUDEOF'
 #cloud-config
-hostname: veriqo
+hostname: veriqko
 manage_etc_hosts: true
 
 users:
-  - name: veriqo
+  - name: veriqko
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
@@ -111,18 +111,18 @@ packages:
   - htop
 
 write_files:
-  - path: /opt/veriqo/deploy.sh
+  - path: /opt/veriqko/deploy.sh
     permissions: '0755'
     content: |
       #!/bin/bash
       # This script is generated and executed by cloud-init
       # See deploy-ubuntu.sh for the full deployment script
-      curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | bash
+      curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/claude/add-pdf-support-166IR/infra/deploy-ubuntu.sh | bash
 
 runcmd:
-  - /opt/veriqo/deploy.sh
+  - /opt/veriqko/deploy.sh
 
-final_message: "Veriqo deployment complete after $UPTIME seconds"
+final_message: "Veriqko deployment complete after $UPTIME seconds"
 CLOUDEOF
 )
 
@@ -130,11 +130,11 @@ CLOUDEOF
 mkdir -p /var/lib/vz/snippets
 
 # Write cloud-init config
-echo "$CLOUD_INIT_USER" > /var/lib/vz/snippets/veriqo-user.yml
+echo "$CLOUD_INIT_USER" > /var/lib/vz/snippets/veriqko-user.yml
 
 # Set cloud-init
-qm set $VMID --cicustom "user=local:snippets/veriqo-user.yml"
-qm set $VMID --ciuser veriqo
+qm set $VMID --cicustom "user=local:snippets/veriqko-user.yml"
+qm set $VMID --ciuser veriqko
 qm set $VMID --ipconfig0 ip=dhcp
 
 echo ""
@@ -143,14 +143,14 @@ echo "VM Created Successfully!"
 echo "=============================================="
 echo ""
 echo "Next steps:"
-echo "1. Add your SSH public key to /var/lib/vz/snippets/veriqo-user.yml"
+echo "1. Add your SSH public key to /var/lib/vz/snippets/veriqko-user.yml"
 echo "2. Start the VM: qm start $VMID"
 echo "3. Get the IP: qm guest cmd $VMID network-get-interfaces"
-echo "4. SSH into the VM: ssh veriqo@<IP>"
+echo "4. SSH into the VM: ssh veriqko@<IP>"
 echo ""
 echo "Credentials (save these!):"
-echo "  Database Password: $VERIQO_DB_PASSWORD"
-echo "  JWT Secret: $VERIQO_JWT_SECRET"
-echo "  Admin Email: $VERIQO_ADMIN_EMAIL"
-echo "  Admin Password: $VERIQO_ADMIN_PASSWORD"
+echo "  Database Password: $VERIQKO_DB_PASSWORD"
+echo "  JWT Secret: $VERIQKO_JWT_SECRET"
+echo "  Admin Email: $VERIQKO_ADMIN_EMAIL"
+echo "  Admin Password: $VERIQKO_ADMIN_PASSWORD"
 echo ""

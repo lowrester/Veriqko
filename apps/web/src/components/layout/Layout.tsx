@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
+import logo from '@/assets/logo.png'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -46,7 +47,7 @@ export function Layout() {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <Link to="/" className="text-xl font-bold text-blue-600">
-              Veriqo
+              Veriqko
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

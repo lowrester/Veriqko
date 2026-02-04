@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test API endpoints for Veriqo Platform V2
+# Test API endpoints for Veriqko Platform V2
 BASE_URL="http://localhost:8000/api/v1"
 
 echo "🧪 Testing Platform V2 Endpoints..."

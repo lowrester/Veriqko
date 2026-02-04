@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Veriqo Deployment..."
+echo "🚀 Starting Veriqko Deployment..."
 
 # 1. Update Codebase (Force Sync)
 echo "📥 Pulling latest changes..."
@@ -35,6 +35,6 @@ alembic upgrade head
 
 # 5. Restart Service
 echo "🔄 Restarting Service..."
-sudo systemctl restart veriqo-api
+sudo systemctl restart veriqko-api
 
 echo "✅ Deployment Complete!"

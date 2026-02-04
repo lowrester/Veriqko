@@ -1,8 +1,8 @@
 #!/bin/bash
 #===============================================================================
-# Veriqo Ubuntu Server Deployment Script
+# Veriqko Ubuntu Server Deployment Script
 #
-# Deploys the complete Veriqo platform on Ubuntu Server 22.04/24.04
+# Deploys the complete Veriqko platform on Ubuntu Server 22.04/24.04
 #
 # Components:
 #   - PostgreSQL 15
@@ -12,10 +12,10 @@
 #   - Systemd services
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-ubuntu.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-ubuntu.sh | sudo bash
 #
 #   Or with custom settings:
-#   VERIQO_DOMAIN=myveriqo.com VERIQO_DB_PASSWORD=secret sudo -E bash deploy-ubuntu.sh
+#   VERIQKO_DOMAIN=myveriqko.com VERIQKO_DB_PASSWORD=secret sudo -E bash deploy-ubuntu.sh
 #===============================================================================
 
 set -e
@@ -26,7 +26,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-log() { echo -e "${GREEN}[VERIQO]${NC} $1"; }
+log() { echo -e "${GREEN}[VERIQKO]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
@@ -39,27 +39,27 @@ fi
 # Configuration
 #===============================================================================
 
-VERIQO_USER="${VERIQO_USER:-veriqo}"
-VERIQO_HOME="/opt/veriqo"
-VERIQO_DOMAIN="${VERIQO_DOMAIN:-$(hostname -f)}"
-VERIQO_REPO="${VERIQO_REPO:-https://github.com/lowrester/Veriqo.git}"
-VERIQO_BRANCH="${VERIQO_BRANCH:-claude/add-pdf-support-166IR}"
+VERIQKO_USER="${VERIQKO_USER:-veriqko}"
+VERIQKO_HOME="/opt/veriqko"
+VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-$(hostname -f)}"
+VERIQKO_REPO="${VERIQKO_REPO:-https://github.com/lowrester/Veriqko.git}"
+VERIQKO_BRANCH="${VERIQKO_BRANCH:-claude/add-pdf-support-166IR}"
 
 # Database
-DB_NAME="${DB_NAME:-veriqo}"
-DB_USER="${DB_USER:-veriqo}"
-DB_PASSWORD="${VERIQO_DB_PASSWORD:-$(openssl rand -base64 24)}"
+DB_NAME="${DB_NAME:-veriqko}"
+DB_USER="${DB_USER:-veriqko}"
+DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(openssl rand -base64 24)}"
 
 # Application
-JWT_SECRET="${VERIQO_JWT_SECRET:-$(openssl rand -base64 48)}"
-ADMIN_EMAIL="${VERIQO_ADMIN_EMAIL:-admin@${VERIQO_DOMAIN}}"
-ADMIN_PASSWORD="${VERIQO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
+JWT_SECRET="${VERIQKO_JWT_SECRET:-$(openssl rand -base64 48)}"
+ADMIN_EMAIL="${VERIQKO_ADMIN_EMAIL:-admin@${VERIQKO_DOMAIN}}"
+ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
 
 # Save credentials
-CREDENTIALS_FILE="/root/veriqo-credentials.txt"
+CREDENTIALS_FILE="/root/veriqko-credentials.txt"
 
-log "Starting Veriqo deployment..."
-log "Domain: $VERIQO_DOMAIN"
+log "Starting Veriqko deployment..."
+log "Domain: $VERIQKO_DOMAIN"
 
 #===============================================================================
 # System Setup
@@ -121,49 +121,49 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 
 #===============================================================================
-# Create Veriqo User and Directory
+# Create Veriqko User and Directory
 #===============================================================================
 
-log "Creating veriqo user..."
-id -u $VERIQO_USER &>/dev/null || useradd -r -m -d $VERIQO_HOME -s /bin/bash $VERIQO_USER
+log "Creating veriqko user..."
+id -u $VERIQKO_USER &>/dev/null || useradd -r -m -d $VERIQKO_HOME -s /bin/bash $VERIQKO_USER
 
-mkdir -p $VERIQO_HOME
-mkdir -p $VERIQO_HOME/data
-mkdir -p $VERIQO_HOME/logs
-chown -R $VERIQO_USER:$VERIQO_USER $VERIQO_HOME
+mkdir -p $VERIQKO_HOME
+mkdir -p $VERIQKO_HOME/data
+mkdir -p $VERIQKO_HOME/logs
+chown -R $VERIQKO_USER:$VERIQKO_USER $VERIQKO_HOME
 
 #===============================================================================
 # Clone Repository
 #===============================================================================
 
-log "Cloning Veriqo repository..."
-cd $VERIQO_HOME
+log "Cloning Veriqko repository..."
+cd $VERIQKO_HOME
 
 if [ -d "app" ]; then
     rm -rf app
 fi
 
-git clone --branch $VERIQO_BRANCH $VERIQO_REPO app
-chown -R $VERIQO_USER:$VERIQO_USER app
+git clone --branch $VERIQKO_BRANCH $VERIQKO_REPO app
+chown -R $VERIQKO_USER:$VERIQKO_USER app
 
 #===============================================================================
 # Backend Setup
 #===============================================================================
 
 log "Setting up backend..."
-cd $VERIQO_HOME/app/apps/api
+cd $VERIQKO_HOME/app/apps/api
 
 # Create virtual environment
-sudo -u $VERIQO_USER python3.11 -m venv venv
-sudo -u $VERIQO_USER ./venv/bin/pip install --upgrade pip
-sudo -u $VERIQO_USER ./venv/bin/pip install -e ".[dev]"
+sudo -u $VERIQKO_USER python3.11 -m venv venv
+sudo -u $VERIQKO_USER ./venv/bin/pip install --upgrade pip
+sudo -u $VERIQKO_USER ./venv/bin/pip install -e ".[dev]"
 
 # Create .env file
 cat > .env <<EOF
-# Veriqo API Configuration
+# Veriqko API Configuration
 ENVIRONMENT=production
 DEBUG=false
-BASE_URL=https://${VERIQO_DOMAIN}
+BASE_URL=https://${VERIQKO_DOMAIN}
 
 # Database
 DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}
@@ -174,34 +174,34 @@ JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Storage
-STORAGE_BASE_PATH=${VERIQO_HOME}/data
+STORAGE_BASE_PATH=${VERIQKO_HOME}/data
 STORAGE_MAX_FILE_SIZE_MB=100
 
 # Reports
 REPORT_EXPIRY_DAYS=90
 
 # Branding
-BRAND_NAME=Veriqo
+BRAND_NAME=Veriqko
 BRAND_PRIMARY_COLOR=#2563eb
 
 # CORS
-CORS_ORIGINS=https://${VERIQO_DOMAIN}
+CORS_ORIGINS=https://${VERIQKO_DOMAIN}
 
 # Logging
 LOG_LEVEL=INFO
 LOG_FORMAT=json
 EOF
 
-chown $VERIQO_USER:$VERIQO_USER .env
+chown $VERIQKO_USER:$VERIQKO_USER .env
 chmod 600 .env
 
 # Run migrations
 log "Running database migrations..."
-sudo -u $VERIQO_USER ./venv/bin/alembic upgrade head
+sudo -u $VERIQKO_USER ./venv/bin/alembic upgrade head
 
 # Create admin user
 log "Creating admin user..."
-PASSWORD_HASH=$(sudo -u $VERIQO_USER ./venv/bin/python3 -c "from veriqo.auth.password import hash_password; print(hash_password('${ADMIN_PASSWORD}'))")
+PASSWORD_HASH=$(sudo -u $VERIQKO_USER ./venv/bin/python3 -c "from veriqko.auth.password import hash_password; print(hash_password('${ADMIN_PASSWORD}'))")
 
 sudo -u postgres psql -d $DB_NAME <<EOSQL
 INSERT INTO users (id, email, password_hash, full_name, role, is_active, created_at, updated_at)
@@ -227,16 +227,16 @@ log "Backend setup complete"
 #===============================================================================
 
 log "Setting up frontend..."
-cd $VERIQO_HOME/app/apps/web
+cd $VERIQKO_HOME/app/apps/web
 
 # Create .env file
 cat > .env <<EOF
-VITE_API_URL=https://${VERIQO_DOMAIN}
+VITE_API_URL=https://${VERIQKO_DOMAIN}
 EOF
 
 # Install dependencies and build
-sudo -u $VERIQO_USER npm install
-sudo -u $VERIQO_USER npm run build
+sudo -u $VERIQKO_USER npm install
+sudo -u $VERIQKO_USER npm run build
 
 log "Frontend setup complete"
 
@@ -247,23 +247,23 @@ log "Frontend setup complete"
 log "Creating systemd services..."
 
 # Backend service
-cat > /etc/systemd/system/veriqo-api.service <<EOF
+cat > /etc/systemd/system/veriqko-api.service <<EOF
 [Unit]
-Description=Veriqo API Server
+Description=Veriqko API Server
 After=network.target postgresql.service
 Requires=postgresql.service
 
 [Service]
 Type=exec
-User=${VERIQO_USER}
-Group=${VERIQO_USER}
-WorkingDirectory=${VERIQO_HOME}/app/apps/api
-Environment=PATH=${VERIQO_HOME}/app/apps/api/venv/bin:/usr/bin
-ExecStart=${VERIQO_HOME}/app/apps/api/venv/bin/uvicorn veriqo.main:app --host 127.0.0.1 --port 8000
+User=${VERIQKO_USER}
+Group=${VERIQKO_USER}
+WorkingDirectory=${VERIQKO_HOME}/app/apps/api
+Environment=PATH=${VERIQKO_HOME}/app/apps/api/venv/bin:/usr/bin
+ExecStart=${VERIQKO_HOME}/app/apps/api/venv/bin/uvicorn veriqko.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
-StandardOutput=append:${VERIQO_HOME}/logs/api.log
-StandardError=append:${VERIQO_HOME}/logs/api-error.log
+StandardOutput=append:${VERIQKO_HOME}/logs/api.log
+StandardError=append:${VERIQKO_HOME}/logs/api-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -271,8 +271,8 @@ EOF
 
 # Enable and start services
 systemctl daemon-reload
-systemctl enable veriqo-api
-systemctl start veriqo-api
+systemctl enable veriqko-api
+systemctl start veriqko-api
 
 log "Systemd services configured"
 
@@ -283,13 +283,13 @@ log "Systemd services configured"
 log "Configuring Nginx..."
 apt-get install -y nginx
 
-cat > /etc/nginx/sites-available/veriqo <<EOF
+cat > /etc/nginx/sites-available/veriqko <<EOF
 server {
     listen 80;
-    server_name ${VERIQO_DOMAIN};
+    server_name ${VERIQKO_DOMAIN};
 
     # Frontend static files
-    root ${VERIQO_HOME}/app/apps/web/dist;
+    root ${VERIQKO_HOME}/app/apps/web/dist;
     index index.html;
 
     # Gzip compression
@@ -343,7 +343,7 @@ server {
 EOF
 
 # Enable site
-ln -sf /etc/nginx/sites-available/veriqo /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/veriqko /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
 # Test and reload nginx
@@ -368,13 +368,13 @@ ufw --force enable
 # SSL Certificate (Let's Encrypt)
 #===============================================================================
 
-if [ "$VERIQO_DOMAIN" != "$(hostname -f)" ] && [ "$VERIQO_DOMAIN" != "localhost" ]; then
+if [ "$VERIQKO_DOMAIN" != "$(hostname -f)" ] && [ "$VERIQKO_DOMAIN" != "localhost" ]; then
     log "Setting up SSL with Let's Encrypt..."
     apt-get install -y certbot python3-certbot-nginx
 
     # Only run certbot if domain is publicly accessible
-    if host "$VERIQO_DOMAIN" &>/dev/null; then
-        certbot --nginx -d "$VERIQO_DOMAIN" --non-interactive --agree-tos --email "$ADMIN_EMAIL" || warn "Certbot failed - you may need to run it manually"
+    if host "$VERIQKO_DOMAIN" &>/dev/null; then
+        certbot --nginx -d "$VERIQKO_DOMAIN" --non-interactive --agree-tos --email "$ADMIN_EMAIL" || warn "Certbot failed - you may need to run it manually"
     else
         warn "Domain not publicly accessible. Run certbot manually when DNS is configured."
     fi
@@ -389,11 +389,11 @@ fi
 log "Saving credentials..."
 cat > $CREDENTIALS_FILE <<EOF
 ===============================================================================
-VERIQO DEPLOYMENT CREDENTIALS
+VERIQKO DEPLOYMENT CREDENTIALS
 Generated: $(date)
 ===============================================================================
 
-Domain: https://${VERIQO_DOMAIN}
+Domain: https://${VERIQKO_DOMAIN}
 
 DATABASE
 --------
@@ -423,17 +423,17 @@ chmod 600 $CREDENTIALS_FILE
 #===============================================================================
 
 log "Checking services..."
-systemctl status veriqo-api --no-pager || true
+systemctl status veriqko-api --no-pager || true
 systemctl status nginx --no-pager || true
 systemctl status postgresql --no-pager || true
 
 echo ""
 echo "=============================================="
-echo -e "${GREEN}VERIQO DEPLOYMENT COMPLETE!${NC}"
+echo -e "${GREEN}VERIQKO DEPLOYMENT COMPLETE!${NC}"
 echo "=============================================="
 echo ""
-echo "Access your Veriqo instance:"
-echo "  URL: https://${VERIQO_DOMAIN}"
+echo "Access your Veriqko instance:"
+echo "  URL: https://${VERIQKO_DOMAIN}"
 echo ""
 echo "Admin login:"
 echo "  Email: ${ADMIN_EMAIL}"
@@ -442,8 +442,8 @@ echo ""
 echo "Credentials saved to: ${CREDENTIALS_FILE}"
 echo ""
 echo "Useful commands:"
-echo "  systemctl status veriqo-api    # Check API status"
-echo "  journalctl -u veriqo-api -f    # View API logs"
-echo "  tail -f ${VERIQO_HOME}/logs/   # View log files"
+echo "  systemctl status veriqko-api    # Check API status"
+echo "  journalctl -u veriqko-api -f    # View API logs"
+echo "  tail -f ${VERIQKO_HOME}/logs/   # View log files"
 echo ""
 echo "=============================================="

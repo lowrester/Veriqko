@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: 'veriqo-auth',
+      name: 'veriqko-auth',
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

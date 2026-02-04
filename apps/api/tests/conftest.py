@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from veriqo.db.base import Base, get_session
-from veriqo.main import app
-from veriqo.config import get_settings
+from veriqko.db.base import Base, get_session
+from veriqko.main import app
+from veriqko.config import get_settings
 
 settings = get_settings()
 
@@ -18,7 +18,7 @@ settings = get_settings()
 # For this "infrastructure" phase, let's setup the engine.
 
 # Override database URL for tests (if we had a test db)
-# TEST_DATABASE_URL = settings.database_url.replace("veriqo", "veriqo_test")
+# TEST_DATABASE_URL = settings.database_url.replace("veriqko", "veriqko_test")
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator:

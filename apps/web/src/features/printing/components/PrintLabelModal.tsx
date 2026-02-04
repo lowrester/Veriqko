@@ -136,7 +136,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
                         <div className="border border-border rounded-lg p-4 bg-white text-gray-900 shadow-sm flex flex-col items-center text-center space-y-4">
                             <div className="w-full border-b border-gray-200 pb-2 mb-2">
                                 <h3 className="font-bold text-lg uppercase tracking-wider">Shipping Note</h3>
-                                <p className="text-sm text-gray-500">Veriqo Quality Assurance</p>
+                                <p className="text-sm text-gray-500">Veriqko Quality Assurance</p>
                             </div>
 
                             <div className="text-left w-full space-y-1">
@@ -162,7 +162,7 @@ export function PrintLabelModal({ isOpen, onClose, context }: PrintLabelModalPro
 
                             <div className="py-2">
                                 <QRCodeSVG
-                                    value={`https://veriqo.com/portal/jobs/${context.id}`}
+                                    value={`https://veriqko.com/portal/jobs/${context.id}`}
                                     size={128}
                                     level={"M"}
                                 />
