@@ -13,10 +13,20 @@ fi
 echo "🚀 Starting Veriqko Platform Update..."
 
 # Configuration
-APP_DIR="/opt/veriqko/app"
+INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$INFRA_DIR/.." && pwd)"
 WEB_DIR="$APP_DIR/apps/web"
 API_DIR="$APP_DIR/apps/api"
-VERIQKO_USER="veriqko"
+
+# Detect user (prefer current user if veriqko isn't found)
+if id "veriqko" &>/dev/null; then
+    VERIQKO_USER="veriqko"
+elif id "veriqo" &>/dev/null; then
+    VERIQKO_USER="veriqo"
+else
+    VERIQKO_USER=$(logname || echo $USER)
+fi
+
 BRANCH="main"
 
 # Colors
