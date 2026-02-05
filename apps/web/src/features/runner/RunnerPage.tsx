@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CheckCircle, Printer, Clock } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Printer, Clock, RotateCw } from 'lucide-react'
 import { api } from '@/api/client'
+import { jobsApi } from '@/api/jobs'
 import { useToastStore } from '@/stores/toastStore'
 import { StepCard } from './components/StepCard'
 import { PrintLabelModal } from '../printing/components/PrintLabelModal'
@@ -127,6 +128,18 @@ export function RunnerPage() {
         }
     })
 
+    // Picea sync mutation
+    const piceaMutation = useMutation({
+        mutationFn: () => jobsApi.syncPicea(jobId!),
+        onSuccess: (data) => {
+            addToast(data.message, 'success')
+            queryClient.invalidateQueries({ queryKey: ['job', jobId, 'steps'] })
+        },
+        onError: () => {
+            addToast('Misslyckades att hämta diagnosdata från Picea.', 'error')
+        }
+    })
+
     if (jobLoading || stepsLoading || !job) {
         return <div className="text-center py-12">Loading job data...</div>
     }
@@ -165,6 +178,14 @@ export function RunnerPage() {
                 >
                     <Printer className="w-4 h-4" />
                     Print Label
+                </button>
+                <button
+                    onClick={() => piceaMutation.mutate()}
+                    disabled={piceaMutation.isPending}
+                    className="btn-secondary flex items-center gap-2 mr-2 border-purple-200 hover:border-purple-300 text-purple-700"
+                >
+                    <RotateCw className={`w-4 h-4 ${piceaMutation.isPending ? 'animate-spin' : ''}`} />
+                    {piceaMutation.isPending ? 'Fetching...' : 'Fetch diagnostics'}
                 </button>
                 <button className="btn-primary flex items-center gap-2">
                     <CheckCircle className="w-4 h-4" />

@@ -44,9 +44,16 @@ class Settings(BaseSettings):
     storage_backend: str = "local"
     storage_base_path: Path = Field(default=Path("/data/veriqko"))
     storage_max_file_size_mb: int = 100
+    azure_storage_connection_string: Optional[str] = None
+    azure_storage_container_name: str = "veriqko-assets"
 
     # Reports
     report_expiry_days: int = 90
+
+    # Picea Integration
+    picea_api_url: Optional[str] = None
+    picea_api_key: Optional[str] = None
+    picea_customer_id: Optional[str] = None
 
     # Branding (white-label)
     brand_name: str = "Veriqko"

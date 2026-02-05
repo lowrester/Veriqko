@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Optional
 from uuid import uuid4
 
 import aiofiles
@@ -33,6 +33,8 @@ class StorageConfig:
     base_path: Path
     max_file_size_mb: int = 100
     allowed_mime_types: list[str] | None = None
+    azure_connection_string: str | None = None
+    azure_container_name: str = "veriqko-assets"
 
     def __post_init__(self):
         if self.allowed_mime_types is None:
@@ -77,6 +79,92 @@ class Storage(ABC):
     async def delete(self, relative_path: str) -> bool:
         """Delete a file."""
         pass
+
+
+class AzureBlobStorage(Storage):
+    """Azure Blob Storage implementation."""
+
+    def __init__(self, config: StorageConfig):
+        self.config = config
+        if not config.azure_connection_string:
+            raise ValueError("Azure connection string is required")
+
+        # Lazy import to avoid dependency issues if not using Azure
+        from azure.storage.blob import BlobServiceClient
+        self.client = BlobServiceClient.from_connection_string(config.azure_connection_string)
+        self.container_name = config.azure_container_name
+
+    async def save(
+        self,
+        file: BinaryIO,
+        job_id: str,
+        filename: str,
+        mime_type: str,
+        folder: str = "evidence",
+    ) -> StoredFile:
+        # Validate mime type
+        if mime_type not in self.config.allowed_mime_types:
+            raise ValueError(f"Unsupported file type: {mime_type}")
+
+        # Generate unique filename
+        file_uuid = str(uuid4())
+        safe_filename = self._sanitize_filename(filename)
+        stored_filename = f"{file_uuid}_{safe_filename}"
+
+        # Build blob path: {folder}/YYYY/MM/job_id/
+        now = datetime.now(timezone.utc)
+        blob_path = f"{folder}/{now.year}/{now.month:02d}/{job_id}/{stored_filename}"
+
+        # Calculate hash while reading
+        sha256 = hashlib.sha256()
+        content = file.read()
+        sha256.update(content)
+        size = len(content)
+
+        # Check size limit
+        if size > self.config.max_file_size_mb * 1024 * 1024:
+            raise ValueError(f"File exceeds maximum size of {self.config.max_file_size_mb}MB")
+
+        # Upload to Azure
+        container_client = self.client.get_container_client(self.container_name)
+        blob_client = container_client.get_blob_client(blob_path)
+        
+        # Simple upload for now, could be optimized for large files
+        blob_client.upload_blob(content, overwrite=True, content_settings={"content_type": mime_type})
+
+        return StoredFile(
+            stored_filename=stored_filename,
+            relative_path=blob_path,
+            absolute_path=blob_client.url,
+            size_bytes=size,
+            sha256_hash=sha256.hexdigest(),
+            mime_type=mime_type,
+        )
+
+    async def get_path(self, relative_path: str) -> str:
+        container_client = self.client.get_container_client(self.container_name)
+        blob_client = container_client.get_blob_client(relative_path)
+        return blob_client.url
+
+    async def exists(self, relative_path: str) -> bool:
+        container_client = self.client.get_container_client(self.container_name)
+        blob_client = container_client.get_blob_client(relative_path)
+        return blob_client.exists()
+
+    async def delete(self, relative_path: str) -> bool:
+        container_client = self.client.get_container_client(self.container_name)
+        blob_client = container_client.get_blob_client(relative_path)
+        if blob_client.exists():
+            blob_client.delete_blob()
+            return True
+        return False
+
+    def _sanitize_filename(self, filename: str) -> str:
+        safe = re.sub(r"[^\w\-.]", "_", filename)
+        if "." in safe:
+            name, ext = safe.rsplit(".", 1)
+            return f"{name[:50]}.{ext}"
+        return safe[:50]
 
 
 class LocalFileStorage(Storage):
@@ -203,11 +291,11 @@ def get_storage() -> Storage:
     config = StorageConfig(
         base_path=settings.storage_base_path,
         max_file_size_mb=settings.storage_max_file_size_mb,
+        azure_connection_string=settings.azure_storage_connection_string,
+        azure_container_name=settings.azure_storage_container_name,
     )
 
     if settings.storage_backend == "azure":
-        # Placeholder for Azure implementation
-        # return AzureBlobStorage(config)
-        pass
+        return AzureBlobStorage(config)
 
     return LocalFileStorage(config)

@@ -113,4 +113,5 @@ export const jobsApi = {
   getValidTransitions: (id: string) => api.get<string[]>(`/jobs/${id}/valid-transitions`),
 
   getHistory: (id: string) => api.get<JobHistory[]>(`/jobs/${id}/history`),
+  syncPicea: (id: string) => api.post<{ message: string }>(`/picea/sync/${id}`, {}),
 }
