@@ -12,7 +12,7 @@
 #   - Systemd services
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-ubuntu.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-ubuntu.sh | sudo bash
 #
 #   Or with custom settings:
 #   VERIQKO_DOMAIN=myveriqko.com VERIQKO_DB_PASSWORD=secret sudo -E bash deploy-ubuntu.sh
@@ -42,7 +42,7 @@ fi
 VERIQKO_USER="${VERIQKO_USER:-veriqko}"
 VERIQKO_HOME="/opt/veriqko"
 VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-$(hostname -f)}"
-VERIQKO_REPO="${VERIQKO_REPO:-https://github.com/lowrester/Veriqko.git}"
+VERIQKO_REPO="${VERIQKO_REPO:-https://github.com/lowrester/Veriqo.git}"
 VERIQKO_BRANCH="${VERIQKO_BRANCH:-main}"
 
 # Database

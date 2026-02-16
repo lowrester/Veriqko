@@ -124,7 +124,7 @@ write_files:
       export VERIQKO_ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD}"
       
       # See deploy-ubuntu.sh for the full deployment script
-      curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-ubuntu.sh | bash
+      curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-ubuntu.sh | bash
 
 runcmd:
   - /opt/veriqko/deploy.sh
