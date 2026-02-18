@@ -2,37 +2,47 @@
 #===============================================================================
 # Veriqko Ubuntu Server Deployment Script
 #
-# Deploys the complete Veriqko platform on Ubuntu Server 22.04/24.04
+# Provisions the OS and system dependencies for the Veriqko platform.
+# Run this FIRST on a fresh Ubuntu 22.04/24.04 server (bare-metal or VM).
+# After this completes, run deploy-platform-v2.sh to install the application.
 #
-# Components:
-#   - PostgreSQL 15
-#   - Python 3.11 + FastAPI backend
-#   - Node.js 20 + React frontend
-#   - Nginx reverse proxy
-#   - Systemd services
-#
-# Usage:
+# Usage (direct):
 #   curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-ubuntu.sh | sudo bash
 #
-#   Or with custom settings:
+# Usage (with custom settings):
 #   VERIQKO_DOMAIN=myveriqko.com VERIQKO_DB_PASSWORD=secret sudo -E bash deploy-ubuntu.sh
+#
+# What this script does:
+#   1. Updates system packages
+#   2. Installs system dependencies (PostgreSQL, Python 3.11, Node.js 20, Nginx, etc.)
+#   3. Installs and enables QEMU Guest Agent (for Proxmox)
+#   4. Generates a cloud-init/server SSH key and displays it
+#   5. Generates a dedicated GitHub deploy key and displays it (with pause)
+#   6. Configures SSH for GitHub (SSH-only, no HTTPS)
+#   7. Sets up ssh-agent as a systemd user service (autostart on boot)
+#   8. Creates the veriqko system user and directories
+#   9. Configures PostgreSQL
 #===============================================================================
 
-set -e
+set -euo pipefail
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-log() { echo -e "${GREEN}[VERIQKO]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+log()     { echo -e "${GREEN}[VERIQKO]${NC} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+banner()  { echo -e "\n${BOLD}${CYAN}$1${NC}\n"; }
+divider() { echo -e "${YELLOW}================================================================${NC}"; }
 
-# Check if running as root
+# Must run as root
 if [ "$EUID" -ne 0 ]; then
-    error "Please run as root (sudo)"
+    error "Please run as root: sudo bash deploy-ubuntu.sh"
 fi
 
 #===============================================================================
@@ -42,35 +52,33 @@ fi
 VERIQKO_USER="${VERIQKO_USER:-veriqko}"
 VERIQKO_HOME="/opt/veriqko"
 VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-$(hostname -f)}"
-VERIQKO_REPO="${VERIQKO_REPO:-https://github.com/lowrester/Veriqo.git}"
-VERIQKO_BRANCH="${VERIQKO_BRANCH:-main}"
+GITHUB_REPO_SSH="git@github.com:lowrester/Veriqo.git"
 
 # Database
 DB_NAME="${DB_NAME:-veriqko}"
 DB_USER="${DB_USER:-veriqko}"
 DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(openssl rand -base64 24)}"
 
-# Application
+# Application secrets
 JWT_SECRET="${VERIQKO_JWT_SECRET:-$(openssl rand -base64 48)}"
 ADMIN_EMAIL="${VERIQKO_ADMIN_EMAIL:-admin@${VERIQKO_DOMAIN}}"
 ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
 
-# Save credentials
 CREDENTIALS_FILE="/root/veriqko-credentials.txt"
 
-log "Starting Veriqko deployment..."
+log "Starting Veriqko OS provisioning..."
 log "Domain: $VERIQKO_DOMAIN"
 
 #===============================================================================
-# System Setup
+# System Packages
 #===============================================================================
 
 log "Updating system packages..."
-apt-get update
-apt-get upgrade -y
+apt-get update -qq
+DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
 
-log "Installing dependencies..."
-apt-get install -y \
+log "Installing base dependencies..."
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
     curl \
     wget \
     git \
@@ -79,360 +87,321 @@ apt-get install -y \
     apt-transport-https \
     ca-certificates \
     gnupg \
-    gnupg \
     lsb-release \
     openssh-client \
-    ssh-askpass \
-    qemu-guest-agent
+    openssl \
+    ufw \
+    htop \
+    unzip \
+    jq
 
 #===============================================================================
-# SSH Key Setup
+# QEMU Guest Agent (Proxmox)
 #===============================================================================
 
-log "Setting up SSH..."
-SSH_DIR="/root/.ssh"
-mkdir -p "$SSH_DIR"
-chmod 700 "$SSH_DIR"
+log "Installing and enabling QEMU Guest Agent..."
+DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-guest-agent
 
-if [ ! -f "$SSH_DIR/id_ed25519" ]; then
-    log "Generating new ED25519 SSH key..."
-    ssh-keygen -t ed25519 -C "deploy@veriqko" -f "$SSH_DIR/id_ed25519" -N ""
+systemctl enable qemu-guest-agent
+systemctl start qemu-guest-agent || true   # may already be running
+
+log "QEMU Guest Agent status:"
+systemctl is-active qemu-guest-agent && log "  ✅ qemu-guest-agent is running" || warn "  ⚠️  qemu-guest-agent may not be active inside the VM (normal if not on Proxmox)"
+
+#===============================================================================
+# SSH Key Setup — Server / Cloud-Init Key
+#===============================================================================
+
+log "Setting up server SSH key..."
+ROOT_SSH_DIR="/root/.ssh"
+mkdir -p "$ROOT_SSH_DIR"
+chmod 700 "$ROOT_SSH_DIR"
+
+if [ ! -f "$ROOT_SSH_DIR/id_ed25519" ]; then
+    log "Generating server ED25519 SSH key..."
+    ssh-keygen -t ed25519 -C "veriqko-server@$(hostname)" -f "$ROOT_SSH_DIR/id_ed25519" -N ""
 fi
 
-# Ensure ssh-agent is running and key is added
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)"
-fi
-ssh-add "$SSH_DIR/id_ed25519"
+SERVER_PUBKEY=$(cat "$ROOT_SSH_DIR/id_ed25519.pub")
 
-# Add ssh-agent to profile for persistence
-if ! grep -q "ssh-agent" /root/.bashrc; then
-    cat >> /root/.bashrc <<'EOF'
+divider
+banner "📋 SERVER / CLOUD-INIT SSH PUBLIC KEY"
+echo "Add this key to Proxmox cloud-init 'SSH Public Keys' field"
+echo "or to ~/.ssh/authorized_keys on this server for admin access:"
+echo ""
+echo -e "${BOLD}${SERVER_PUBKEY}${NC}"
+divider
+echo ""
 
-# Start SSH Agent on login
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)" > /dev/null
-    ssh-add ~/.ssh/id_ed25519 2>/dev/null
+#===============================================================================
+# SSH Key Setup — GitHub Deploy Key
+#===============================================================================
+
+log "Generating GitHub deploy key..."
+GITHUB_KEY_FILE="$ROOT_SSH_DIR/github_deploy"
+
+if [ ! -f "$GITHUB_KEY_FILE" ]; then
+    ssh-keygen -t ed25519 -C "veriqko-deploy@$(hostname)" -f "$GITHUB_KEY_FILE" -N ""
 fi
+
+GITHUB_PUBKEY=$(cat "${GITHUB_KEY_FILE}.pub")
+
+divider
+banner "🔑 GITHUB DEPLOY SSH KEY — ACTION REQUIRED"
+echo -e "${RED}${BOLD}You MUST add this key to GitHub before the platform install can clone the repo.${NC}"
+echo ""
+echo "Steps:"
+echo "  1. Copy the key below"
+echo "  2. Go to: https://github.com/settings/keys  (or repo Deploy Keys)"
+echo "  3. Click 'New SSH key', paste the key, save"
+echo ""
+echo -e "${BOLD}${GITHUB_PUBKEY}${NC}"
+echo ""
+divider
+echo ""
+echo -e "${YELLOW}Waiting 60 seconds for you to add the key to GitHub...${NC}"
+echo -e "${YELLOW}Press Enter to continue immediately if already done.${NC}"
+echo ""
+read -t 60 -p "Press Enter to continue..." || true
+echo ""
+
+#===============================================================================
+# SSH Config — GitHub SSH-Only
+#===============================================================================
+
+log "Configuring SSH for GitHub (SSH-only, no HTTPS)..."
+
+SSH_CONFIG="$ROOT_SSH_DIR/config"
+
+# Remove any existing github.com block and rewrite cleanly
+if grep -q "Host github.com" "$SSH_CONFIG" 2>/dev/null; then
+    # Remove the existing block
+    sed -i '/^Host github\.com/,/^Host /{ /^Host github\.com/d; /^Host /!d }' "$SSH_CONFIG" 2>/dev/null || true
+fi
+
+cat >> "$SSH_CONFIG" <<EOF
+
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile $GITHUB_KEY_FILE
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    PreferredAuthentications publickey
 EOF
+
+chmod 600 "$SSH_CONFIG"
+
+# Configure git globally to always use SSH for GitHub
+git config --global url."git@github.com:".insteadOf "https://github.com/"
+git config --global core.sshCommand "ssh -i $GITHUB_KEY_FILE -o StrictHostKeyChecking=no"
+
+log "SSH GitHub config written to $SSH_CONFIG"
+
+#===============================================================================
+# ssh-agent — Systemd User Service (Autostart on Boot)
+#===============================================================================
+
+log "Setting up ssh-agent as a systemd user service..."
+
+# Create the systemd user service directory for root
+SYSTEMD_USER_DIR="/root/.config/systemd/user"
+mkdir -p "$SYSTEMD_USER_DIR"
+
+cat > "$SYSTEMD_USER_DIR/ssh-agent.service" <<'EOF'
+[Unit]
+Description=SSH Key Agent
+Documentation=man:ssh-agent(1)
+After=default.target
+
+[Service]
+Type=simple
+Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+ExecStart=/usr/bin/ssh-agent -D -a %t/ssh-agent.socket
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+EOF
+
+# Enable lingering so user services start at boot (not just on login)
+loginctl enable-linger root 2>/dev/null || true
+
+# Enable the service
+systemctl --user daemon-reload 2>/dev/null || true
+systemctl --user enable ssh-agent 2>/dev/null || true
+systemctl --user start ssh-agent 2>/dev/null || true
+
+# Set SSH_AUTH_SOCK in /etc/environment for system-wide availability
+if ! grep -q "SSH_AUTH_SOCK" /etc/environment 2>/dev/null; then
+    echo 'SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"' >> /etc/environment
 fi
 
-echo -e "\n${YELLOW}================================================================${NC}"
-echo -e "${YELLOW}ACTION REQUIRED: ADD THIS SSH PUBLIC KEY TO GITHUB${NC}"
-echo -e "${YELLOW}================================================================${NC}\n"
-cat "$SSH_DIR/id_ed25519.pub"
-echo -e "\n${YELLOW}URL: https://github.com/settings/keys${NC}"
-echo -e "${YELLOW}Waiting 30 seconds for you to copy the key... (or press Enter to continue)${NC}\n"
+# Also add to .bashrc for interactive sessions (belt-and-suspenders)
+if ! grep -q "ssh-agent" /root/.bashrc 2>/dev/null; then
+    cat >> /root/.bashrc <<'BASHEOF'
 
-read -t 30 -p "Press Enter to continue deployment..." || true
+# SSH Agent (autostart via systemd user service; this is a fallback)
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.socket"
+if ! ssh-add -l &>/dev/null; then
+    ssh-add ~/.ssh/github_deploy 2>/dev/null || true
+fi
+BASHEOF
+fi
+
+# Add the GitHub deploy key to the agent now (for this session)
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/0}/ssh-agent.socket"
+ssh-agent -D -a "$SSH_AUTH_SOCK" &>/dev/null &
+sleep 1
+ssh-add "$GITHUB_KEY_FILE" 2>/dev/null || true
+
+log "ssh-agent systemd user service configured"
 
 #===============================================================================
 # PostgreSQL
 #===============================================================================
 
 log "Installing PostgreSQL..."
-apt-get install -y postgresql postgresql-contrib
+DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
 
 log "Configuring PostgreSQL..."
 systemctl start postgresql
 systemctl enable postgresql
 
-# Create database and user
+# Create database and user (idempotent)
 sudo -u postgres psql <<EOF
-CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
-CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
+        CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
+    ELSE
+        ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
+    END IF;
+END
+\$\$;
+
+SELECT 'CREATE DATABASE ${DB_NAME} OWNER ${DB_USER}'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${DB_NAME}')\gexec
+
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 \c ${DB_NAME}
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 EOF
 
-log "PostgreSQL configured successfully"
+log "PostgreSQL configured"
 
 #===============================================================================
 # Python 3.11
 #===============================================================================
 
 log "Installing Python 3.11..."
-add-apt-repository -y ppa:deadsnakes/ppa
-apt-get update
-apt-get install -y python3.11 python3.11-venv python3.11-dev
+if ! python3.11 --version &>/dev/null; then
+    add-apt-repository -y ppa:deadsnakes/ppa
+    apt-get update -qq
+fi
+DEBIAN_FRONTEND=noninteractive apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip
+
+log "Python version: $(python3.11 --version)"
 
 #===============================================================================
 # Node.js 20
 #===============================================================================
 
 log "Installing Node.js 20..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs
-
-#===============================================================================
-# Create Veriqko User and Directory
-#===============================================================================
-
-log "Creating veriqko user..."
-id -u $VERIQKO_USER &>/dev/null || useradd -r -m -d $VERIQKO_HOME -s /bin/bash $VERIQKO_USER
-
-mkdir -p $VERIQKO_HOME
-mkdir -p $VERIQKO_HOME/data
-mkdir -p $VERIQKO_HOME/logs
-chown -R $VERIQKO_USER:$VERIQKO_USER $VERIQKO_HOME
-
-#===============================================================================
-# Clone Repository
-#===============================================================================
-
-log "Cloning Veriqko repository..."
-cd $VERIQKO_HOME
-
-if [ -d "app" ]; then
-    rm -rf app
+if ! node --version 2>/dev/null | grep -q "v20"; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
 fi
 
-git clone --branch $VERIQKO_BRANCH $VERIQKO_REPO app
-chown -R $VERIQKO_USER:$VERIQKO_USER app
+log "Node version: $(node --version)"
+log "npm version:  $(npm --version)"
 
 #===============================================================================
-# Backend Setup
+# Nginx
 #===============================================================================
 
-log "Setting up backend..."
-cd $VERIQKO_HOME/app/apps/api
-
-# Create virtual environment
-sudo -u $VERIQKO_USER python3.11 -m venv venv
-sudo -u $VERIQKO_USER ./venv/bin/pip install --upgrade pip
-sudo -u $VERIQKO_USER ./venv/bin/pip install -e ".[dev]"
-
-# Create .env file
-cat > .env <<EOF
-# Veriqko API Configuration
-ENVIRONMENT=production
-DEBUG=false
-BASE_URL=https://${VERIQKO_DOMAIN}
-
-# Database
-DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}
-
-# Authentication
-JWT_SECRET_KEY=${JWT_SECRET}
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# Storage
-STORAGE_BASE_PATH=${VERIQKO_HOME}/data
-STORAGE_MAX_FILE_SIZE_MB=100
-
-# Reports
-REPORT_EXPIRY_DAYS=90
-
-# Branding
-BRAND_NAME=Veriqko
-BRAND_PRIMARY_COLOR=#2563eb
-
-# CORS
-CORS_ORIGINS=https://${VERIQKO_DOMAIN}
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-EOF
-
-chown $VERIQKO_USER:$VERIQKO_USER .env
-chmod 600 .env
-
-# Run migrations
-log "Running database migrations..."
-sudo -u $VERIQKO_USER ./venv/bin/alembic upgrade head
-
-# Create admin user
-log "Creating admin user..."
-PASSWORD_HASH=$(sudo -u $VERIQKO_USER ./venv/bin/python3 -c "from veriqko.auth.password import hash_password; print(hash_password('${ADMIN_PASSWORD}'))")
-
-sudo -u postgres psql -d $DB_NAME <<EOSQL
-INSERT INTO users (id, email, password_hash, full_name, role, is_active, created_at, updated_at)
-VALUES (
-    gen_random_uuid(),
-    '${ADMIN_EMAIL}',
-    '${PASSWORD_HASH}',
-    'Administrator',
-    'admin',
-    true,
-    NOW(),
-    NOW()
-)
-ON CONFLICT (email) DO NOTHING;
-EOSQL
-
-log "Admin user created: ${ADMIN_EMAIL}"
-
-log "Backend setup complete"
-
-#===============================================================================
-# Frontend Setup
-#===============================================================================
-
-log "Setting up frontend..."
-cd $VERIQKO_HOME/app/apps/web
-
-# Create .env file
-cat > .env <<EOF
-VITE_API_URL=https://${VERIQKO_DOMAIN}
-EOF
-
-# Install dependencies and build
-sudo -u $VERIQKO_USER npm install
-sudo -u $VERIQKO_USER npm run build
-
-log "Frontend setup complete"
-
-#===============================================================================
-# Systemd Services
-#===============================================================================
-
-log "Creating systemd services..."
-
-# Backend service
-cat > /etc/systemd/system/veriqko-api.service <<EOF
-[Unit]
-Description=Veriqko API Server
-After=network.target postgresql.service
-Requires=postgresql.service
-
-[Service]
-Type=exec
-User=${VERIQKO_USER}
-Group=${VERIQKO_USER}
-WorkingDirectory=${VERIQKO_HOME}/app/apps/api
-Environment=PATH=${VERIQKO_HOME}/app/apps/api/venv/bin:/usr/bin
-ExecStart=${VERIQKO_HOME}/app/apps/api/venv/bin/uvicorn veriqko.main:app --host 127.0.0.1 --port 8000
-Restart=always
-RestartSec=5
-StandardOutput=append:${VERIQKO_HOME}/logs/api.log
-StandardError=append:${VERIQKO_HOME}/logs/api-error.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start services
-systemctl daemon-reload
-systemctl enable veriqko-api
-systemctl start veriqko-api
-
-log "Systemd services configured"
-
-#===============================================================================
-# Nginx Configuration
-#===============================================================================
-
-log "Configuring Nginx..."
-apt-get install -y nginx
-
-cat > /etc/nginx/sites-available/veriqko <<EOF
-server {
-    listen 80;
-    server_name ${VERIQKO_DOMAIN};
-
-    # Frontend static files
-    root ${VERIQKO_HOME}/app/apps/web/dist;
-    index index.html;
-
-    # Gzip compression
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
-    gzip_min_length 1000;
-
-    # API proxy
-    location /api/ {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-        proxy_read_timeout 300;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-        client_max_body_size 100M;
-    }
-
-    # Public report access
-    location /r/ {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    # Health check
-    location /health {
-        proxy_pass http://127.0.0.1:8000;
-    }
-
-    # SPA routing - serve index.html for all other routes
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # Cache static assets
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-}
-EOF
-
-# Enable site
-ln -sf /etc/nginx/sites-available/veriqko /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
-# Test and reload nginx
-nginx -t
-systemctl restart nginx
+log "Installing Nginx..."
+DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 systemctl enable nginx
 
-log "Nginx configured"
+#===============================================================================
+# Veriqko User and Directories
+#===============================================================================
+
+log "Creating veriqko system user and directories..."
+id -u "$VERIQKO_USER" &>/dev/null || useradd -r -m -d "$VERIQKO_HOME" -s /bin/bash "$VERIQKO_USER"
+
+mkdir -p "$VERIQKO_HOME"/{app,data,logs,backups}
+chown -R "$VERIQKO_USER:$VERIQKO_USER" "$VERIQKO_HOME"
+
+# Create systemd user service dir for veriqko user (for ssh-agent)
+VERIQKO_SYSTEMD_DIR="/home/$VERIQKO_USER/.config/systemd/user"
+mkdir -p "$VERIQKO_SYSTEMD_DIR"
+
+cat > "$VERIQKO_SYSTEMD_DIR/ssh-agent.service" <<'EOF'
+[Unit]
+Description=SSH Key Agent
+Documentation=man:ssh-agent(1)
+After=default.target
+
+[Service]
+Type=simple
+Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+ExecStart=/usr/bin/ssh-agent -D -a %t/ssh-agent.socket
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+EOF
+
+chown -R "$VERIQKO_USER:$VERIQKO_USER" "/home/$VERIQKO_USER/.config" 2>/dev/null || true
+
+# Enable lingering for veriqko user
+loginctl enable-linger "$VERIQKO_USER" 2>/dev/null || true
+
+# Copy GitHub deploy key to veriqko user's SSH dir
+VERIQKO_SSH_DIR="$VERIQKO_HOME/.ssh"
+mkdir -p "$VERIQKO_SSH_DIR"
+cp "$GITHUB_KEY_FILE" "$VERIQKO_SSH_DIR/github_deploy"
+cp "${GITHUB_KEY_FILE}.pub" "$VERIQKO_SSH_DIR/github_deploy.pub"
+chown -R "$VERIQKO_USER:$VERIQKO_USER" "$VERIQKO_SSH_DIR"
+chmod 700 "$VERIQKO_SSH_DIR"
+chmod 600 "$VERIQKO_SSH_DIR/github_deploy"
+
+# SSH config for veriqko user
+cat > "$VERIQKO_SSH_DIR/config" <<EOF
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile $VERIQKO_SSH_DIR/github_deploy
+    IdentitiesOnly yes
+    StrictHostKeyChecking no
+    PreferredAuthentications publickey
+EOF
+chmod 600 "$VERIQKO_SSH_DIR/config"
+
+# Git config for veriqko user
+sudo -u "$VERIQKO_USER" git config --global url."git@github.com:".insteadOf "https://github.com/"
+sudo -u "$VERIQKO_USER" git config --global core.sshCommand "ssh -i $VERIQKO_SSH_DIR/github_deploy -o StrictHostKeyChecking=no"
+
+log "Veriqko user and directories configured"
 
 #===============================================================================
 # Firewall
 #===============================================================================
 
 log "Configuring firewall..."
-apt-get install -y ufw
 ufw allow ssh
 ufw allow http
 ufw allow https
 ufw --force enable
 
 #===============================================================================
-# SSL Certificate (Let's Encrypt)
-#===============================================================================
-
-if [ "$VERIQKO_DOMAIN" != "$(hostname -f)" ] && [ "$VERIQKO_DOMAIN" != "localhost" ]; then
-    log "Setting up SSL with Let's Encrypt..."
-    apt-get install -y certbot python3-certbot-nginx
-
-    # Only run certbot if domain is publicly accessible
-    if host "$VERIQKO_DOMAIN" &>/dev/null; then
-        certbot --nginx -d "$VERIQKO_DOMAIN" --non-interactive --agree-tos --email "$ADMIN_EMAIL" || warn "Certbot failed - you may need to run it manually"
-    else
-        warn "Domain not publicly accessible. Run certbot manually when DNS is configured."
-    fi
-else
-    warn "Skipping SSL setup for local domain. Configure manually for production."
-fi
-
-#===============================================================================
 # Save Credentials
 #===============================================================================
 
 log "Saving credentials..."
-cat > $CREDENTIALS_FILE <<EOF
+cat > "$CREDENTIALS_FILE" <<EOF
 ===============================================================================
 VERIQKO DEPLOYMENT CREDENTIALS
 Generated: $(date)
@@ -442,53 +411,78 @@ Domain: https://${VERIQKO_DOMAIN}
 
 DATABASE
 --------
-Host: localhost
-Port: 5432
+Host:     localhost
+Port:     5432
 Database: ${DB_NAME}
 Username: ${DB_USER}
 Password: ${DB_PASSWORD}
 
-ADMIN USER
-----------
-Email: ${ADMIN_EMAIL}
+ADMIN USER (set during platform install)
+-----------------------------------------
+Email:    ${ADMIN_EMAIL}
 Password: ${ADMIN_PASSWORD}
 
 JWT SECRET
 ----------
 ${JWT_SECRET}
 
-IMPORTANT: Keep this file secure and delete after saving credentials elsewhere!
+SSH KEYS
+--------
+Server key (cloud-init/admin access):
+  Private: /root/.ssh/id_ed25519
+  Public:  /root/.ssh/id_ed25519.pub
+
+GitHub deploy key:
+  Private: /root/.ssh/github_deploy
+  Public:  /root/.ssh/github_deploy.pub
+  Also at: ${VERIQKO_HOME}/.ssh/github_deploy
+
+IMPORTANT: Keep this file secure. Delete after saving credentials elsewhere!
 ===============================================================================
 EOF
 
-chmod 600 $CREDENTIALS_FILE
+chmod 600 "$CREDENTIALS_FILE"
+
+# Export for use by deploy-platform-v2.sh
+export VERIQKO_DB_PASSWORD="$DB_PASSWORD"
+export VERIQKO_JWT_SECRET="$JWT_SECRET"
+export VERIQKO_ADMIN_EMAIL="$ADMIN_EMAIL"
+export VERIQKO_ADMIN_PASSWORD="$ADMIN_PASSWORD"
 
 #===============================================================================
-# Final Status
+# Verify GitHub SSH Connectivity
 #===============================================================================
 
-log "Checking services..."
-systemctl status veriqko-api --no-pager || true
-systemctl status nginx --no-pager || true
-systemctl status postgresql --no-pager || true
+log "Testing GitHub SSH connectivity..."
+if sudo -u "$VERIQKO_USER" ssh -T git@github.com -o StrictHostKeyChecking=no -i "$VERIQKO_SSH_DIR/github_deploy" 2>&1 | grep -q "successfully authenticated"; then
+    log "✅ GitHub SSH authentication successful!"
+else
+    warn "⚠️  GitHub SSH test inconclusive (key may not be added to GitHub yet)."
+    warn "   Run: ssh -T git@github.com -i $VERIQKO_SSH_DIR/github_deploy"
+    warn "   After adding the deploy key at: https://github.com/settings/keys"
+fi
+
+#===============================================================================
+# Summary
+#===============================================================================
 
 echo ""
-echo "=============================================="
-echo -e "${GREEN}VERIQKO DEPLOYMENT COMPLETE!${NC}"
-echo "=============================================="
+divider
+banner "✅ VERIQKO OS PROVISIONING COMPLETE"
+divider
 echo ""
-echo "Access your Veriqko instance:"
-echo "  URL: https://${VERIQKO_DOMAIN}"
+echo "System is ready. Next step:"
 echo ""
-echo "Admin login:"
-echo "  Email: ${ADMIN_EMAIL}"
-echo "  Password: ${ADMIN_PASSWORD}"
+echo -e "  ${BOLD}Run the platform installer:${NC}"
+echo "  curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-platform-v2.sh | sudo bash"
+echo ""
+echo "Or if you cloned the repo:"
+echo "  sudo bash /path/to/infra/deploy-platform-v2.sh"
 echo ""
 echo "Credentials saved to: ${CREDENTIALS_FILE}"
 echo ""
-echo "Useful commands:"
-echo "  systemctl status veriqko-api    # Check API status"
-echo "  journalctl -u veriqko-api -f    # View API logs"
-echo "  tail -f ${VERIQKO_HOME}/logs/   # View log files"
+echo "GitHub deploy key (add to GitHub if not done):"
+echo "  cat /root/.ssh/github_deploy.pub"
+echo "  https://github.com/settings/keys"
 echo ""
-echo "=============================================="
+divider
