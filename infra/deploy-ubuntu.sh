@@ -368,6 +368,27 @@ chown -R "$VERIQKO_USER:$VERIQKO_USER" "$VERIQKO_SSH_DIR"
 chmod 700 "$VERIQKO_SSH_DIR"
 chmod 600 "$VERIQKO_SSH_DIR/github_deploy"
 
+# Copy authorized_keys so direct SSH login works for the veriqko user
+# Try ubuntu cloud-init user first, fall back to root
+AUTHORIZED_KEYS_SRC=""
+for src in /home/ubuntu/.ssh/authorized_keys /root/.ssh/authorized_keys; do
+    if [ -f "$src" ]; then
+        AUTHORIZED_KEYS_SRC="$src"
+        break
+    fi
+done
+
+if [ -n "$AUTHORIZED_KEYS_SRC" ]; then
+    cp "$AUTHORIZED_KEYS_SRC" "$VERIQKO_SSH_DIR/authorized_keys"
+    chown "$VERIQKO_USER:$VERIQKO_USER" "$VERIQKO_SSH_DIR/authorized_keys"
+    chmod 600 "$VERIQKO_SSH_DIR/authorized_keys"
+    log "SSH authorized_keys copied to veriqko user (from $AUTHORIZED_KEYS_SRC)"
+    log "  → You can now SSH directly: ssh veriqko@<VM_IP>"
+else
+    warn "No authorized_keys found to copy for veriqko user."
+    warn "  Direct SSH as veriqko will not work until you add keys manually."
+fi
+
 # SSH config for veriqko user
 cat > "$VERIQKO_SSH_DIR/config" <<EOF
 Host github.com
