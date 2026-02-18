@@ -56,6 +56,15 @@ VERIQKO_ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
 PROXMOX_SSH_KEY="/root/.ssh/veriqko_vm_deploy"
 VM_USER="ubuntu"   # Ubuntu cloud images default user
 
+# Your personal SSH public key — injected into cloud-init so you can SSH
+# directly from your laptop (not just from the Proxmox host).
+# Set via env var or leave blank to be prompted.
+ADMIN_SSH_PUBKEY="${ADMIN_SSH_PUBKEY:-}"
+
+# Console password — emergency access via Proxmox UI if SSH fails.
+# Set via env var or leave blank to auto-generate.
+VM_CONSOLE_PASSWORD="${VM_CONSOLE_PASSWORD:-$(openssl rand -base64 16)}"
+
 # Paths
 CLOUD_IMAGE_DIR="/var/lib/vz/template/iso"
 SNIPPETS_DIR="/var/lib/vz/snippets"
@@ -110,6 +119,30 @@ echo "  Ubuntu:     $UBUNTU_VERSION"
 echo "  Domain:     $VERIQKO_DOMAIN"
 echo "  Branch:     $VERIQKO_BRANCH"
 echo ""
+
+# Prompt for personal SSH public key if not set
+if [ -z "$ADMIN_SSH_PUBKEY" ]; then
+    # Try to auto-detect from common locations on the Proxmox host
+    for keyfile in /root/.ssh/id_ed25519.pub /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys; do
+        if [ -f "$keyfile" ]; then
+            DETECTED_KEY=$(head -1 "$keyfile")
+            echo ""
+            echo -e "${CYAN}Detected SSH public key: ${NC}${DETECTED_KEY:0:60}..."
+            read -rp "Use this key for VM access? [Y/n] " USE_DETECTED
+            if [[ ! "$USE_DETECTED" =~ ^[Nn]$ ]]; then
+                ADMIN_SSH_PUBKEY="$DETECTED_KEY"
+            fi
+            break
+        fi
+    done
+fi
+
+if [ -z "$ADMIN_SSH_PUBKEY" ]; then
+    echo ""
+    warn "No personal SSH public key set."
+    warn "Without it you can only SSH into the VM from this Proxmox host."
+    read -rp "Paste your SSH public key (or press Enter to skip): " ADMIN_SSH_PUBKEY
+fi
 
 # Confirm before proceeding
 read -rp "Proceed with deployment? [y/N] " CONFIRM
@@ -184,6 +217,17 @@ log "Importing disk..."
 qm importdisk "$VMID" "$CLOUD_IMAGE" "$STORAGE"
 
 log "Configuring VM hardware..."
+
+# Build combined SSH authorized keys (Proxmox host key + operator personal key)
+ALL_SSH_KEYS="$PROXMOX_PUBKEY"
+if [ -n "$ADMIN_SSH_PUBKEY" ]; then
+    ALL_SSH_KEYS="${PROXMOX_PUBKEY}
+${ADMIN_SSH_PUBKEY}"
+    log "Injecting Proxmox host key + personal admin key into cloud-init"
+else
+    log "Injecting Proxmox host key into cloud-init (no personal key provided)"
+fi
+
 qm set "$VMID" \
     --scsihw virtio-scsi-pci \
     --scsi0 "${STORAGE}:vm-${VMID}-disk-0,discard=on" \
@@ -194,7 +238,10 @@ qm set "$VMID" \
     --agent enabled=1 \
     --ipconfig0 ip=dhcp \
     --ciuser "$VM_USER" \
-    --sshkeys <(echo "$PROXMOX_PUBKEY")
+    --cipassword "$VM_CONSOLE_PASSWORD" \
+    --sshkeys <(echo "$ALL_SSH_KEYS")
+
+log "Cloud-init: SSH keys injected, console password set"
 
 log "Resizing disk to $VM_DISK..."
 qm resize "$VMID" scsi0 "$VM_DISK"
