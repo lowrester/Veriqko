@@ -7,6 +7,9 @@ from uuid import uuid4
 from veriqko.jobs.models import Job, TestStep, TestResult, TestResultStatus
 from veriqko.integrations.picea.client import PiceaClient
 from veriqko.config import get_settings
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 class PiceaService:
     """Service to handle Picea Diagnostics synchronization logic."""
@@ -72,13 +75,19 @@ class PiceaService:
             step = step_result.scalar_one_or_none()
             
             if step:
-                # Add or Update TestResult
                 await self._upsert_test_result(
                     job_id=job.id,
                     step_id=step.id,
                     status=status,
                     notes=notes,
                     performed_by_id=performed_by_id
+                )
+            else:
+                logger.warning(
+                    "Unknown Picea test step ignored",
+                    test_name=name,
+                    job_id=job.id,
+                    serial_number=job.serial_number
                 )
 
         await self.session.commit()

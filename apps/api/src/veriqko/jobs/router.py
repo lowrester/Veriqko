@@ -1,9 +1,12 @@
 """Job router."""
 
+from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from veriqko.db.base import get_db
 from veriqko.dependencies import get_current_user
@@ -35,8 +38,8 @@ def _job_to_response(job) -> JobResponse:
         status=job.status.value,
         device={
             "id": job.device.id,
-            "brand": job.device.brand,
-            "device_type": job.device.device_type,
+            "brand": job.device.brand.name,
+            "device_type": job.device.gadget_type.name,
             "model": job.device.model,
         }
         if job.device
@@ -99,8 +102,8 @@ async def list_jobs(
             id=job.id,
             serial_number=job.serial_number,
             status=job.status.value,
-            device_brand=job.device.brand if job.device else None,
-            device_type=job.device.device_type if job.device else None,
+            device_brand=job.device.brand.name if job.device else None,
+            device_type=job.device.gadget_type.name if job.device else None,
             device_model=job.device.model if job.device else None,
             assigned_technician_name=job.assigned_technician.full_name
             if job.assigned_technician
@@ -270,30 +273,37 @@ async def get_job_steps(
     # Ideally this logic belongs in Service, but implementing here for brevity/speed as per constraints
     from veriqko.jobs.models import Job, TestStep, TestResult, JobStatus
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     from veriqko.jobs.schemas import TestStepResponse, EvidenceSummary
     
-    # Get Job
-    job = await db.get(Job, job_id)
+    # Get Job with session.get but we need relationships
+    stmt = select(Job).options(selectinload(Job.device)).where(Job.id == job_id, Job.deleted_at.is_(None))
+    job = (await db.execute(stmt)).scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
     # Determine station type from job status (INTAKE, RESET, FUNCTIONAL, QC)
     # Mapping job status to station type enum
-    # Note: JobStatus values match station types usually.
     current_stage = job.status
-    if current_stage not in [JobStatus.INTAKE, JobStatus.RESET, JobStatus.FUNCTIONAL, JobStatus.QC]:
-        # If complete or failed, maybe show all? Or based on where it stopped?
-        # For now, return empty if not in active stage
+    
+    # If job is completed or failed, we show the steps from the last station (QC)
+    # or expose all steps. For now, matching the active stations.
+    if current_stage in [JobStatus.COMPLETED, JobStatus.FAILED]:
+        # Show QC steps for completed/failed as it's the final verification point
+        display_stage = JobStatus.QC
+    else:
+        display_stage = current_stage
+        
+    if display_stage not in [JobStatus.INTAKE, JobStatus.RESET, JobStatus.FUNCTIONAL, JobStatus.QC]:
         return []
 
     # Get Steps
     stmt = select(TestStep).where(
         TestStep.device_id == job.device_id,
-        TestStep.station_type == current_stage
+        TestStep.station_type == display_stage
     ).order_by(TestStep.sequence_order)
     steps = (await db.execute(stmt)).scalars().all()
     
-    # Get Results
     stmt_results = (
         select(TestResult)
         .options(selectinload(TestResult.evidence_items))
@@ -355,7 +365,7 @@ async def submit_step_result(
     if result:
         result.status = TestResultStatus(data.status)
         result.notes = data.notes
-        result.performed_at = datetime.now()
+        result.performed_at = datetime.now(timezone.utc)
         result.performed_by_id = current_user.id
     else:
         result = TestResult(
@@ -363,24 +373,10 @@ async def submit_step_result(
             test_step_id=step_id,
             status=TestResultStatus(data.status),
             performed_by_id=current_user.id,
-            performed_at=datetime.now(),
+            performed_at=datetime.now(timezone.utc),
             notes=data.notes
         )
         db.add(result)
         
     await db.commit()
     return {"status": "success"}
-
-
-@router.post("/{job_id}/evidence", status_code=status.HTTP_201_CREATED)
-async def upload_evidence(
-    job_id: str,
-    # file: UploadFile... handling upload requires multipart
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    # This endpoint needs UploadFile which is not imported. 
-    # For now, return mock success as implementing full file upload might be too big for this step
-    # and the user just wants the ROUTE to exist.
-    return {"status": "mock_uploaded"}
-

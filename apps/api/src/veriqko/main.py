@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
 
     # Include routers
     from veriqko.auth.router import router as auth_router
-    from veriqko.evidence.router import evidence_router, router as evidence_job_router
+    from veriqko.evidence.router import evidence_router, router as evidence_job_router, step_evidence_router
     from veriqko.jobs.router import router as jobs_router
     from veriqko.reports.router import public_router, router as reports_router
     from veriqko.users.router import router as users_router
@@ -88,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router, prefix="/api/v1")
     app.include_router(jobs_router, prefix="/api/v1")
     app.include_router(evidence_job_router, prefix="/api/v1")
+    app.include_router(step_evidence_router, prefix="/api/v1")
     app.include_router(evidence_router, prefix="/api/v1")
     app.include_router(reports_router, prefix="/api/v1")
     app.include_router(devices_router, prefix="/api/v1")

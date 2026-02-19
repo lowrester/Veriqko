@@ -44,9 +44,46 @@ async function request<T>(
   })
 
   if (!response.ok) {
-    // Handle 401 - logout
-    if (response.status === 401) {
-      useAuthStore.getState().logout()
+    // Handle 401 - try refresh token
+    if (response.status === 401 && !options.skipAuth) {
+      const state = useAuthStore.getState()
+      const refreshToken = state.refreshToken
+
+      if (refreshToken) {
+        try {
+          // Attempt refresh
+          const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          })
+
+          if (refreshResponse.ok) {
+            const data = await refreshResponse.json()
+            state.setTokens(data.access_token, refreshToken)
+
+            // Retry original request with new token
+            const retryHeaders = {
+              ...headers,
+              'Authorization': `Bearer ${data.access_token}`
+            }
+            const retryResponse = await fetch(url, {
+              ...fetchOptions,
+              headers: retryHeaders,
+            })
+
+            if (retryResponse.ok) {
+              if (retryResponse.status === 204) return undefined as T
+              return retryResponse.json()
+            }
+          }
+        } catch (e) {
+          console.error("Token refresh failed", e)
+        }
+      }
+
+      // If refresh failed or no token, logout
+      state.logout()
     }
 
     let errorData

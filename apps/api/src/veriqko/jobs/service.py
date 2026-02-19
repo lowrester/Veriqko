@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -201,6 +201,7 @@ class EvidenceRepository:
 
         stmt = select(Evidence).where(
             Evidence.job_id == job_id,
+            Evidence.stage == stage,
             Evidence.superseded_at.is_(None),
         )
         result = await self.db.execute(stmt)
@@ -275,8 +276,11 @@ class JobService:
             if target == JobStatus.COMPLETED:
                 from veriqko.integrations.email import email_service
                 # In real app, we would load the customer email from the User object
-                # For MVP we default to a placeholder if not set
+                # Try to extract from customer_reference if it looks like an email
                 customer_email = "customer@example.com"
+                if job.customer_reference and "@" in job.customer_reference:
+                    customer_email = job.customer_reference
+                
                 customer_name = "Valued Customer"
                 
                 # Fire and forget (bg task in production)

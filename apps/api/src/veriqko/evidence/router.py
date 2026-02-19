@@ -16,7 +16,7 @@ from veriqko.dependencies import get_current_user
 from veriqko.evidence.models import Evidence, EvidenceType
 from veriqko.evidence.schemas import EvidenceListResponse, EvidenceResponse, EvidenceUploadResponse
 from veriqko.evidence.storage import get_storage
-from veriqko.jobs.models import Job
+from veriqko.jobs.models import Job, TestResult, TestResultStatus, JobStatus
 from veriqko.users.models import User
 
 router = APIRouter(prefix="/jobs/{job_id}/evidence", tags=["evidence"])
@@ -131,6 +131,89 @@ async def upload_evidence(
         sha256_hash=stored.sha256_hash,
         captured_at=now,
         captured_by_id=current_user.id,
+        stage=job.status,
+        created_at=now,
+    )
+    db.add(evidence)
+    await db.flush()
+
+    return EvidenceUploadResponse(
+        id=evidence.id,
+        job_id=evidence.job_id,
+        evidence_type=evidence.evidence_type.value,
+        original_filename=evidence.original_filename,
+        file_size_bytes=evidence.file_size_bytes,
+        sha256_hash=evidence.sha256_hash,
+        captured_at=evidence.captured_at,
+        created_at=evidence.created_at,
+    )
+
+
+@router.post("/steps/{step_id}", response_model=EvidenceUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_evidence_for_step(
+    job_id: str,
+    step_id: str,
+    file: Annotated[UploadFile, File(...)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Upload evidence and link it to a specific test step/result."""
+    # Verify job exists
+    job_stmt = select(Job).where(Job.id == job_id, Job.deleted_at.is_(None))
+    job = (await db.execute(job_stmt)).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Find or create TestResult for this step
+    tr_stmt = select(TestResult).where(
+        TestResult.job_id == job_id,
+        TestResult.test_step_id == step_id
+    )
+    result = (await db.execute(tr_stmt)).scalar_one_or_none()
+
+    if not result:
+        # Create a pending result if it doesn't exist
+        result = TestResult(
+            id=str(uuid4()),
+            job_id=job_id,
+            test_step_id=step_id,
+            status=TestResultStatus.PENDING,
+            performed_by_id=current_user.id,
+            performed_at=datetime.now(timezone.utc),
+            notes="Auto-created via evidence upload"
+        )
+        db.add(result)
+        await db.flush()
+
+    # Save file
+    storage = get_storage()
+    try:
+        stored = await storage.save(
+            file=file.file,
+            job_id=job_id,
+            filename=file.filename or "unknown",
+            mime_type=file.content_type,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Create evidence record
+    now = datetime.now(timezone.utc)
+    evidence = Evidence(
+        id=str(uuid4()),
+        job_id=job_id,
+        test_result_id=result.id,
+        stage=job.status,
+        evidence_type=_get_evidence_type(file.content_type),
+        original_filename=file.filename or "unknown",
+        stored_filename=stored.stored_filename,
+        file_path=stored.relative_path,
+        file_size_bytes=stored.size_bytes,
+        mime_type=file.content_type,
+        sha256_hash=stored.sha256_hash,
+        captured_at=now,
+        captured_by_id=current_user.id,
         created_at=now,
     )
     db.add(evidence)
@@ -221,4 +304,104 @@ async def download_evidence(
         path=file_path,
         filename=evidence.original_filename,
         media_type=evidence.mime_type,
+    )
+
+
+# Router for step-specific evidence (matches frontend URL)
+step_evidence_router = APIRouter(prefix="/jobs/{job_id}/steps/{step_id}/evidence", tags=["evidence"])
+
+
+@step_evidence_router.post("", response_model=EvidenceUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_evidence_for_step(
+    job_id: str,
+    step_id: str,
+    file: Annotated[UploadFile, File(...)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Upload evidence and link it to a specific test step/result."""
+    # Verify job exists
+    job_stmt = select(Job).where(Job.id == job_id, Job.deleted_at.is_(None))
+    job = (await db.execute(job_stmt)).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Find or create TestResult for this step
+    # We should know the stage this step belongs to
+    tr_stmt = select(TestResult).where(
+        TestResult.job_id == job_id,
+        TestResult.test_step_id == step_id
+    )
+    result = (await db.execute(tr_stmt)).scalar_one_or_none()
+
+    if not result:
+        # We need the station type for this step to create the result accurately
+        from veriqko.jobs.models import TestStep
+        step = await db.get(TestStep, step_id)
+        if not step:
+            raise HTTPException(status_code=404, detail="Step not found")
+            
+        stage = step.station_type
+        
+        # Create a pending result
+        result = TestResult(
+            id=str(uuid4()),
+            job_id=job_id,
+            test_step_id=step_id,
+            status=TestResultStatus.PENDING,
+            performed_by_id=current_user.id,
+            performed_at=datetime.now(timezone.utc),
+            notes="Auto-created via evidence upload"
+        )
+        db.add(result)
+        await db.flush()
+    else:
+        # Find the stage from the step
+        from veriqko.jobs.models import TestStep
+        step = await db.get(TestStep, step_id)
+        stage = step.station_type if step else job.status
+
+    # Save file
+    storage = get_storage()
+    try:
+        stored = await storage.save(
+            file=file.file,
+            job_id=job_id,
+            filename=file.filename or "unknown",
+            mime_type=file.content_type,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Create evidence record
+    now = datetime.now(timezone.utc)
+    evidence = Evidence(
+        id=str(uuid4()),
+        job_id=job_id,
+        test_result_id=result.id,
+        stage=stage,
+        evidence_type=_get_evidence_type(file.content_type),
+        original_filename=file.filename or "unknown",
+        stored_filename=stored.stored_filename,
+        file_path=stored.relative_path,
+        file_size_bytes=stored.size_bytes,
+        mime_type=file.content_type,
+        sha256_hash=stored.sha256_hash,
+        captured_at=now,
+        captured_by_id=current_user.id,
+        created_at=now,
+    )
+    db.add(evidence)
+    await db.flush()
+
+    return EvidenceUploadResponse(
+        id=evidence.id,
+        job_id=evidence.job_id,
+        evidence_type=evidence.evidence_type.value,
+        original_filename=evidence.original_filename,
+        file_size_bytes=evidence.file_size_bytes,
+        sha256_hash=evidence.sha256_hash,
+        captured_at=evidence.captured_at,
+        created_at=evidence.created_at,
     )

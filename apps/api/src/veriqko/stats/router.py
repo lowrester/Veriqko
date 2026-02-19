@@ -4,8 +4,8 @@ from sqlalchemy import select, func, case, desc, and_
 from typing import Dict, Any, List
 from datetime import datetime, timedelta, timezone
 
-from veriqko.db.base import get_session
-from veriqko.users.auth import get_current_user
+from veriqko.db.base import get_db
+from veriqko.dependencies import get_current_user
 from veriqko.jobs.models import Job, JobStatus, TestResult, TestResultStatus, TestStep
 from veriqko.devices.models import Device
 from veriqko.users.models import User
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 @router.get("/dashboard")
 async def get_dashboard_stats(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
@@ -33,7 +33,7 @@ async def get_dashboard_stats(
             JobStatus.FUNCTIONAL, 
             JobStatus.QC
         ]), 1), else_=0)).label("in_progress")
-    )
+    ).where(Job.deleted_at.is_(None))
     
     result = await session.execute(query)
     stats = result.one()
@@ -45,7 +45,7 @@ async def get_dashboard_stats(
         yield_rate = (stats.completed / total_closed) * 100
         
     # Get recent jobs (limit 5)
-    recent_query = select(Job).order_by(Job.created_at.desc()).limit(5)
+    recent_query = select(Job).where(Job.deleted_at.is_(None)).order_by(Job.created_at.desc()).limit(5)
     recent_result = await session.execute(recent_query)
     recent_jobs = recent_result.scalars().all()
     
@@ -77,7 +77,7 @@ from veriqko.stations.models import Station
 
 @router.get("/floor")
 async def get_floor_status(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> List[Dict[str, Any]]:
     """
@@ -93,7 +93,10 @@ async def get_floor_status(
     jobs_query = select(Job).options(
         selectinload(Job.device)
     ).where(
-        Job.status.notin_([JobStatus.COMPLETED, JobStatus.FAILED])
+        and_(
+            Job.status.notin_([JobStatus.COMPLETED, JobStatus.FAILED]),
+            Job.deleted_at.is_(None)
+        )
     )
     jobs_result = await session.execute(jobs_query)
     active_jobs = jobs_result.scalars().all()
@@ -142,7 +145,7 @@ async def get_floor_status(
 
 @router.get("/defects")
 async def get_defect_heatmap(
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> List[Dict[str, Any]]:
     """
@@ -160,7 +163,12 @@ async def get_defect_heatmap(
         .join(TestResult.job)
         .join(Job.device)
         .join(TestResult.test_step)
-        .where(TestResult.status == TestResultStatus.FAIL)
+        .where(
+            and_(
+                TestResult.status == TestResultStatus.FAIL,
+                Job.deleted_at.is_(None)
+            )
+        )
         .group_by(Device.model, TestStep.name)
         .order_by(func.count(TestResult.id).desc())
         .limit(100)
@@ -180,7 +188,7 @@ async def get_defect_heatmap(
 @router.get("/technicians")
 async def get_technician_leaderboard(
     days: int = 7,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> List[Dict[str, Any]]:
     """
@@ -199,7 +207,8 @@ async def get_technician_leaderboard(
         .where(
             and_(
                 Job.status == JobStatus.COMPLETED,
-                Job.completed_at >= cutoff
+                Job.completed_at >= cutoff,
+                Job.deleted_at.is_(None)
             )
         )
         .group_by(User.id, User.full_name)

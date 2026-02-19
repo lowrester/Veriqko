@@ -116,12 +116,11 @@ export function RunnerPage() {
     // Upload evidence mutation
     const evidenceMutation = useMutation({
         mutationFn: ({ stepId, file }: { stepId: string, file: File }) => {
-            const formData = new FormData()
-            formData.append('file', file)
-            return api.post(`/jobs/${jobId}/steps/${stepId}/evidence`, formData) // Mock endpoint
+            return api.upload(`/jobs/${jobId}/steps/${stepId}/evidence`, file)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['job', jobId, 'steps'] })
+            addToast('Fil har laddats upp.', 'success')
         },
         onError: () => {
             addToast('Kunde inte ladda upp fil.', 'error')
@@ -137,6 +136,18 @@ export function RunnerPage() {
         },
         onError: () => {
             addToast('Misslyckades att hämta diagnosdata från Picea.', 'error')
+        }
+    })
+
+    // Transition mutation (for Complete Job)
+    const transitionMutation = useMutation({
+        mutationFn: (targetStatus: string) => jobsApi.transition(jobId!, { target_status: targetStatus }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            addToast('Jobbet har uppdaterats.', 'success')
+        },
+        onError: (error: any) => {
+            addToast(`Misslyckades att uppdatera status: ${error.message || 'Okänt fel'}`, 'error')
         }
     })
 
@@ -187,9 +198,13 @@ export function RunnerPage() {
                     <RotateCw className={`w-4 h-4 ${piceaMutation.isPending ? 'animate-spin' : ''}`} />
                     {piceaMutation.isPending ? 'Fetching...' : 'Fetch diagnostics'}
                 </button>
-                <button className="btn-primary flex items-center gap-2">
+                <button
+                    onClick={() => transitionMutation.mutate('completed')}
+                    disabled={transitionMutation.isPending}
+                    className="btn-primary flex items-center gap-2"
+                >
                     <CheckCircle className="w-4 h-4" />
-                    Complete Job
+                    {transitionMutation.isPending ? 'Processing...' : 'Complete Job'}
                 </button>
             </div>
 
