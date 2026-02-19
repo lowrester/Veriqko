@@ -123,7 +123,7 @@ log "Cloning $GITHUB_REPO_SSH (branch: $VERIQKO_BRANCH)..."
 # Verify SSH connectivity first
 if ! sudo -u "$VERIQKO_USER" \
     GIT_SSH_COMMAND="ssh -i $GITHUB_KEY -o StrictHostKeyChecking=no" \
-    ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+    ssh -T git@github.com < /dev/null 2>&1 | grep -q "successfully authenticated"; then
     warn "GitHub SSH test inconclusive — attempting clone anyway..."
     warn "If clone fails, ensure the deploy key is added at: https://github.com/settings/keys"
 fi

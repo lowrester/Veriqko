@@ -475,7 +475,7 @@ export VERIQKO_ADMIN_PASSWORD="$ADMIN_PASSWORD"
 #===============================================================================
 
 log "Testing GitHub SSH connectivity..."
-if sudo -u "$VERIQKO_USER" ssh -T git@github.com -o StrictHostKeyChecking=no -i "$VERIQKO_SSH_DIR/github_deploy" 2>&1 | grep -q "successfully authenticated"; then
+if sudo -u "$VERIQKO_USER" ssh -T git@github.com < /dev/null -o StrictHostKeyChecking=no -i "$VERIQKO_SSH_DIR/github_deploy" 2>&1 | grep -q "successfully authenticated"; then
     log "✅ GitHub SSH authentication successful!"
 else
     warn "⚠️  GitHub SSH test inconclusive (key may not be added to GitHub yet)."
