@@ -40,17 +40,42 @@ class PiceaService:
         if not picea_data:
             return False
 
-        # 3. Map Picea data to TestResults
-        # This is a simplified mapping logic.
-        # Ideally, we have a mapping table between Picea test names and Veriqko Step names.
-        # For now, we'll try to match by name or create generic results.
+        # 3. Update Job-level Picea metadata
+        # Structure depends on Picea API - assuming common fields based on analysis
+        job.picea_diagnostics_raw = picea_data
         
-        # Picea data structure is assumed to have a 'tests' list for this example
+        # Extract Verify status
+        job.picea_verify_status = picea_data.get("verifyStatus") or picea_data.get("verify_status")
+        
+        # Extract MDM status
+        # Picea often returns MDM locked as a boolean or a specific test result
+        picea_mdm = picea_data.get("mdmLocked") or picea_data.get("mdm_locked")
+        if picea_mdm is not None:
+            job.picea_mdm_locked = bool(picea_mdm)
+
+        # Extract Erase status & Certificate
+        # Look for Erase result in tests or top-level fields
+        erase_data = picea_data.get("erase") or {}
+        picea_erase = erase_data.get("status") == "passed" or picea_data.get("erase_confirmed", False)
+        
+        # If not in top-level, search in tests list
         tests = picea_data.get("tests", [])
         if not tests and isinstance(picea_data, list):
-            # Maybe the response IS the list of tests
             tests = picea_data
 
+        if not picea_erase:
+            for test in tests:
+                # Look for tests related to Data Erase
+                t_name = str(test.get("name", "")).lower()
+                if "erase" in t_name or "data removal" in t_name:
+                    if test.get("status", "").lower() in ["pass", "passed", "ok"]:
+                        picea_erase = True
+                        break
+
+        job.picea_erase_confirmed = picea_erase
+        job.picea_erase_certificate = erase_data.get("certificate_url") or picea_data.get("erase_certificate")
+
+        # 4. Map Picea data to TestResults
         for picea_test in tests:
             name = picea_test.get("name")
             picea_status = picea_test.get("status", "").lower()

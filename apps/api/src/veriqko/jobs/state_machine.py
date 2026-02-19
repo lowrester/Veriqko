@@ -154,11 +154,15 @@ class JobStateMachine:
             if not job.intake_condition:
                 errors.append("Intake condition assessment must be completed")
 
-        # RESET -> FUNCTIONAL: Require reset evidence
+        # RESET -> FUNCTIONAL: Require reset evidence AND Picea Erase confirmation
         elif current_status == JobStatus.RESET and target_status == JobStatus.FUNCTIONAL:
             evidence = await self.evidence_repo.get_for_job_stage(job_id, JobStatus.RESET)
             if not evidence:
                 errors.append("Factory reset evidence (photo/video) is required")
+            
+            job = await self.job_repo.get(job_id)
+            if job and not job.picea_erase_confirmed:
+                errors.append("Data erasure must be confirmed via Picea before proceeding")
 
         # QC -> COMPLETED: Require QC sign-off
         elif current_status == JobStatus.QC and target_status == JobStatus.COMPLETED:

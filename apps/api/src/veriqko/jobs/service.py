@@ -272,6 +272,15 @@ class JobService:
         if result.success:
             job = await self.repo.update_status(job_id, target, user_id, notes)
             
+            # Auto-trigger Picea sync when moving to RESET
+            if target == JobStatus.RESET:
+                from veriqko.integrations.picea.service import PiceaService
+                picea_service = PiceaService(self.db)
+                # Fire and forget/BG task ideally, but for now we wait to ensure UI updates with fresh data
+                await picea_service.sync_job_diagnostics(job_id, user_id)
+                # Re-fetch job to get updated Picea fields
+                job = await self.repo.get(job_id)
+
             # Send completion email if job is completed
             if target == JobStatus.COMPLETED:
                 from veriqko.integrations.email import email_service

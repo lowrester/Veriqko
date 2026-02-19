@@ -58,6 +58,12 @@ class ReportData:
     passed_tests: int
     failed_tests: int
 
+    # Picea Integration
+    picea_erase_confirmed: bool = False
+    picea_erase_certificate: Optional[str] = None
+    picea_verify_status: Optional[str] = None
+    picea_mdm_locked: bool = False
+
     # Report metadata
     scope: str
     variant: str
@@ -232,6 +238,32 @@ class PDFReportGenerator:
 
         elements.append(table)
         elements.append(Spacer(1, 0.25 * inch))
+
+        # Picea Security Info
+        if data.picea_erase_confirmed or data.picea_mdm_locked is not None:
+             elements.append(Paragraph("Security & Verification", self.styles["SectionHeader"]))
+             security_data = []
+             if data.picea_erase_confirmed:
+                 security_data.append(["Data Erasure:", "CONFIRMED (ADISA/NIST)"])
+                 if data.picea_erase_certificate:
+                     security_data.append(["Certificate:", data.picea_erase_certificate])
+             
+             if data.picea_verify_status:
+                 security_data.append(["Picea Verify:", data.picea_verify_status])
+             
+             if security_data:
+                 table = Table(security_data, colWidths=[2 * inch, 4 * inch])
+                 table.setStyle(
+                     TableStyle(
+                         [
+                             ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                             ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                             ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                         ]
+                     )
+                 )
+                 elements.append(table)
+                 elements.append(Spacer(1, 0.25 * inch))
 
         return elements
 

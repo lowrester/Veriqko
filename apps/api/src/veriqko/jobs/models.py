@@ -99,6 +99,13 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     # Intake condition
     intake_condition: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Picea Integration fields
+    picea_verify_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    picea_mdm_locked: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    picea_erase_confirmed: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    picea_erase_certificate: Mapped[str | None] = mapped_column(Text, nullable=True)
+    picea_diagnostics_raw: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     # Relationships
     device = relationship("Device", back_populates="jobs")
     current_station = relationship("Station", back_populates="jobs")

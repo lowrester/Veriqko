@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_
 
 from veriqko.db.base import get_session
 from veriqko.integrations.picea.service import PiceaService
@@ -27,3 +28,46 @@ async def sync_diagnostics(
         )
     
     return {"message": "Diagnostics synchronized successfully."}
+
+
+@router.post("/webhook", status_code=status.HTTP_200_OK)
+async def picea_webhook(
+    payload: dict,
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Webhook endpoint for Picea to push results.
+    Expected payload contains device identifiers (serial/imei).
+    """
+    # 1. Extract identifier
+    # Picea behavior: payload often has 'serialNumber' or 'imei'
+    serial_number = payload.get("serialNumber") or payload.get("serial_number")
+    imei = payload.get("imei")
+    
+    if not serial_number and not imei:
+        # We can't identify the job, but we return 200 to acknowledge webhook
+        return {"status": "ignored", "reason": "missing_identifier"}
+
+    # 2. Find the job
+    from veriqko.jobs.models import Job
+    stmt = select(Job).where(
+        or_(
+            Job.serial_number == serial_number,
+            Job.imei == imei
+        ),
+        Job.deleted_at.is_(None)
+    ).order_by(Job.created_at.desc())
+    
+    job = (await db.execute(stmt)).scalar_one_or_none()
+    
+    if not job:
+        return {"status": "ignored", "reason": "job_not_found"}
+
+    # 3. Trigger sync
+    # We use a system user ID or similar if needed for history
+    # For now, we'll try to sync without a specific user ID if possible, 
+    # or use a placeholder "system_webhook"
+    service = PiceaService(db)
+    await service.sync_job_diagnostics(job.id, performed_by_id="system_webhook")
+    
+    return {"status": "processed", "job_id": job.id}

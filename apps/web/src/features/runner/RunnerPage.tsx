@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CheckCircle, Printer, Clock, RotateCw } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Printer, Clock, RotateCw, ShieldAlert, ShieldCheck, Trash2, FileText, AlertTriangle } from 'lucide-react'
 import { api } from '@/api/client'
 import { jobsApi } from '@/api/jobs'
 import { useToastStore } from '@/stores/toastStore'
@@ -19,6 +19,10 @@ interface Job {
     device_type: string
     device_model: string
     sla_due_at?: string // ISO date string
+    picea_verify_status?: string
+    picea_mdm_locked?: boolean
+    picea_erase_confirmed?: boolean
+    picea_erase_certificate?: string
 }
 
 interface Step {
@@ -160,6 +164,19 @@ export function RunnerPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
+            {/* Picea Security Alerts */}
+            {job.picea_mdm_locked && (
+                <div className="bg-red-50 border-2 border-red-200 p-4 rounded-xl flex items-center gap-4 animate-pulse">
+                    <div className="bg-red-100 p-3 rounded-full text-red-600">
+                        <ShieldAlert className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-red-800">MDM LOCK DETECTED</h2>
+                        <p className="text-red-700">This device is managed by an external organization. Factory reset may fail or require credentials.</p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <Link to="/dashboard" className="btn-secondary">
@@ -206,6 +223,46 @@ export function RunnerPage() {
                     <CheckCircle className="w-4 h-4" />
                     {transitionMutation.isPending ? 'Processing...' : 'Complete Job'}
                 </button>
+            </div>
+
+            {/* Diagnostics Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="card p-4 flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${job.picea_verify_status === 'SUCCESS' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                        <ShieldCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="text-xs text-text-secondary uppercase font-bold tracking-wider">Picea Verify</div>
+                        <div className="font-bold">{job.picea_verify_status || 'NOT RUN'}</div>
+                    </div>
+                </div>
+
+                <div className="card p-4 flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${job.picea_erase_confirmed ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                        <Trash2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="text-xs text-text-secondary uppercase font-bold tracking-wider">Data Erasure</div>
+                        <div className="font-bold flex items-center gap-2">
+                            {job.picea_erase_confirmed ? 'CONFIRMED' : 'REQD'}
+                            {job.picea_erase_certificate && (
+                                <a href={job.picea_erase_certificate} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800">
+                                    <FileText className="w-4 h-4" />
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="card p-4 flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${job.picea_mdm_locked ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                        <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <div className="text-xs text-text-secondary uppercase font-bold tracking-wider">MDM Status</div>
+                        <div className="font-bold">{job.picea_mdm_locked ? 'LOCKED' : 'CLEAN'}</div>
+                    </div>
+                </div>
             </div>
 
             {/* Progress */}

@@ -36,6 +36,12 @@ export interface Job {
   completed_at?: string
   created_at: string
   updated_at: string
+
+  // Picea Fields
+  picea_verify_status?: string
+  picea_mdm_locked?: boolean
+  picea_erase_confirmed?: boolean
+  picea_erase_certificate?: string
 }
 
 export interface JobListItem {
