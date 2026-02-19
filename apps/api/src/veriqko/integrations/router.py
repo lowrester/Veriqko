@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from veriqko.db.base import get_db
-from veriqko.auth.dependencies import get_current_user
+from veriqko.dependencies import get_current_user
 from veriqko.users.models import User
 from veriqko.integrations.service import IntegrationService
 from veriqko.integrations.schemas import (

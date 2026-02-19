@@ -5,7 +5,7 @@ from sqlalchemy import select, or_
 from veriqko.db.base import get_db
 from veriqko.integrations.picea.service import PiceaService
 from veriqko.users.models import User
-from veriqko.auth.dependencies import get_current_user
+from veriqko.dependencies import get_current_user
 
 router = APIRouter(prefix="/picea", tags=["integrations", "picea"])
 
