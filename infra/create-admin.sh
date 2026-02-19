@@ -12,8 +12,8 @@
 
 set -e
 
-ADMIN_EMAIL="${1:-admin@veriqko.local}"
-ADMIN_PASSWORD="${2:-admin123}"
+ADMIN_EMAIL="${1:-admin@veriqko.com}"
+ADMIN_PASSWORD="${2:-admin123!}"
 
 echo "Creating admin user..."
 echo "Email: $ADMIN_EMAIL"
