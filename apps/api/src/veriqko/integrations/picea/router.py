@@ -33,7 +33,7 @@ async def sync_diagnostics(
 @router.post("/webhook", status_code=status.HTTP_200_OK)
 async def picea_webhook(
     payload: dict,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Webhook endpoint for Picea to push results.
