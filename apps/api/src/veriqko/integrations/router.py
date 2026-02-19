@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from veriqko.db.base import get_session
+from veriqko.db.base import get_db
 from veriqko.auth.dependencies import get_current_user
 from veriqko.users.models import User
 from veriqko.integrations.service import IntegrationService
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/integrations", tags=["integrations"])
 async def create_api_key(
     data: ApiKeyCreate,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db)
 ):
     service = IntegrationService(session)
     api_key, raw_key = await service.create_api_key(data.name, data.scopes, current_user.id)
@@ -38,7 +38,7 @@ async def create_api_key(
 @router.get("/api-keys", response_model=List[ApiKeyResponse])
 async def list_api_keys(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db)
 ):
     service = IntegrationService(session)
     keys = await service.list_api_keys()
@@ -48,7 +48,7 @@ async def list_api_keys(
 async def create_webhook(
     data: WebhookCreate,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db)
 ):
     service = IntegrationService(session)
     webhook = await service.create_webhook(data.url, data.events, current_user.id)
@@ -57,7 +57,7 @@ async def create_webhook(
 @router.get("/webhooks", response_model=List[WebhookResponse])
 async def list_webhooks(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_db)
 ):
     service = IntegrationService(session)
     hooks = await service.list_webhooks()

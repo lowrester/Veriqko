@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from veriqko.jobs.models import Job, JobStatus
-from veriqko.db.base import get_session
+from veriqko.db.base import get_db
 from veriqko.integrations.email import email_service
 
 logger = structlog.get_logger(__name__)
@@ -19,7 +19,7 @@ async def check_sla_breaches():
     """
     logger.info("Starting SLA breach check")
     
-    async for db in get_session():
+    async for db in get_db():
         try:
             now = datetime.now(timezone.utc)
             

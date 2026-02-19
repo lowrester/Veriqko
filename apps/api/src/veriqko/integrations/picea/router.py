@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 
-from veriqko.db.base import get_session
+from veriqko.db.base import get_db
 from veriqko.integrations.picea.service import PiceaService
 from veriqko.users.models import User
 from veriqko.auth.dependencies import get_current_user
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/picea", tags=["integrations", "picea"])
 @router.post("/sync/{job_id}", status_code=status.HTTP_200_OK)
 async def sync_diagnostics(
     job_id: str,
-    db: AsyncSession = Depends(get_session),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
