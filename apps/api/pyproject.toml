@@ -21,6 +21,7 @@ dependencies = [
     "structlog>=24.1.0",
     "httpx>=0.26.0",
     "azure-storage-blob>=12.19.0",
+    "apscheduler>=3.10.4",
 ]
 
 [project.optional-dependencies]

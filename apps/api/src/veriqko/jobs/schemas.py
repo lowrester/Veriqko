@@ -17,6 +17,15 @@ class JobCreate(BaseModel):
     intake_condition: Optional[dict] = None
 
 
+class JobBatchCreate(BaseModel):
+    """Schema for creating multiple jobs in one go."""
+
+    common_data: Optional[dict] = Field(None, description="Common fields for all jobs (brand, model, etc.)")
+    serial_numbers: list[str] = Field(..., min_items=1)
+    batch_id: Optional[str] = None
+    customer_reference: Optional[str] = None
+
+
 class JobUpdate(BaseModel):
     """Schema for updating a job."""
 

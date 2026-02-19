@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/api/client'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Layers, Smartphone, AlertOctagon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PrintLabelModal } from '../printing/components/PrintLabelModal'
+import { useToastStore } from '@/stores/toastStore'
 
 export function IntakeNewPage() {
     const navigate = useNavigate()
@@ -21,6 +22,10 @@ export function IntakeNewPage() {
     const [showPrintModal, setShowPrintModal] = useState(false)
     const [createdJob, setCreatedJob] = useState<any>(null)
     const [submitAction, setSubmitAction] = useState<'create' | 'create_print'>('create')
+    const [isBatchMode, setIsBatchMode] = useState(false)
+    const [serialList, setSerialList] = useState('')
+
+    const [imeiSecurity, setImeiSecurity] = useState<{ is_blacklisted: boolean, reason?: string } | null>(null)
 
     const createMutation = useMutation({
         mutationFn: (data: typeof formData) => api.post('/jobs', data),
@@ -37,7 +42,42 @@ export function IntakeNewPage() {
     const handleSubmit = (action: 'create' | 'create_print') => (e: React.MouseEvent) => {
         e.preventDefault()
         setSubmitAction(action)
-        createMutation.mutate(formData)
+
+        if (isBatchMode) {
+            const sns = serialList.split('\n').map(s => s.trim()).filter(s => s.length > 0)
+            if (sns.length === 0) return
+
+            const batchData = {
+                serial_numbers: sns,
+                batch_id: formData.batch_id,
+                customer_reference: formData.customer_reference,
+                common_data: {
+                    ...formData,
+                    serial_number: undefined, // removed from common
+                }
+            }
+            api.post('/jobs/batch', batchData).then((data: any) => {
+                const jobs = data as any[]
+                const toast = useToastStore.getState().addToast
+                toast(`${jobs.length} jobb har skapats.`, 'success')
+                navigate('/dashboard')
+            })
+        } else {
+            createMutation.mutate(formData)
+        }
+    }
+
+    const checkImei = async (imei: string) => {
+        if (imei.length < 8) {
+            setImeiSecurity(null)
+            return
+        }
+        try {
+            const data = await api.get(`/jobs/security/check-imei/${imei}`)
+            setImeiSecurity(data as { is_blacklisted: boolean, reason?: string })
+        } catch (e) {
+            console.error("IMEI check failed", e)
+        }
     }
 
     const handlePrintClose = () => {
@@ -57,21 +97,49 @@ export function IntakeNewPage() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">New Job Intake</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Register device and start verification</p>
                 </div>
+                <div className="ml-auto flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                    <button
+                        type="button"
+                        onClick={() => setIsBatchMode(false)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!isBatchMode ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-primary' : 'text-gray-500'}`}
+                    >
+                        <Smartphone className="w-4 h-4" />
+                        Single
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsBatchMode(true)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isBatchMode ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-primary' : 'text-gray-500'}`}
+                    >
+                        <Layers className="w-4 h-4" />
+                        Batch
+                    </button>
+                </div>
             </div>
 
             <form className="card space-y-4">
                 <div>
-                    <label className="label">Serial Number *</label>
-                    <input
-                        type="text"
-                        required
-                        value={formData.serial_number}
-                        onChange={(e) =>
-                            setFormData({ ...formData, serial_number: e.target.value })
-                        }
-                        className="input"
-                        placeholder="e.g. ABC123456"
-                    />
+                    <label className="label">{isBatchMode ? 'Serial Numbers (One per line) *' : 'Serial Number *'}</label>
+                    {isBatchMode ? (
+                        <textarea
+                            required
+                            value={serialList}
+                            onChange={(e) => setSerialList(e.target.value)}
+                            className="input min-h-[120px]"
+                            placeholder="Scan multiple serials here..."
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            required
+                            value={formData.serial_number}
+                            onChange={(e) =>
+                                setFormData({ ...formData, serial_number: e.target.value })
+                            }
+                            className="input"
+                            placeholder="e.g. ABC123456"
+                        />
+                    )}
                 </div>
 
                 <div>
@@ -79,12 +147,23 @@ export function IntakeNewPage() {
                     <input
                         type="text"
                         value={formData.imei}
-                        onChange={(e) =>
-                            setFormData({ ...formData, imei: e.target.value })
-                        }
-                        className="input"
+                        onChange={(e) => {
+                            const val = e.target.value
+                            setFormData({ ...formData, imei: val })
+                            checkImei(val)
+                        }}
+                        className={`input ${imeiSecurity?.is_blacklisted ? 'border-red-500 bg-red-50' : ''}`}
                         placeholder="e.g. 3548..."
                     />
+                    {imeiSecurity?.is_blacklisted && (
+                        <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded-lg flex items-start gap-2 text-sm text-red-800">
+                            <AlertOctagon className="w-5 h-5 flex-shrink-0" />
+                            <div>
+                                <p className="font-bold">IMEI BLACKLIST HIT</p>
+                                <p>{imeiSecurity.reason || 'Device reported as stolen or locked.'}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div>
@@ -184,8 +263,8 @@ export function IntakeNewPage() {
                     <button
                         type="button"
                         onClick={handleSubmit('create_print')}
-                        disabled={createMutation.isPending}
-                        className="btn-secondary flex items-center gap-2 border-brand-primary text-brand-primary hover:bg-brand-light"
+                        disabled={createMutation.isPending || isBatchMode}
+                        className={`btn-secondary flex items-center gap-2 border-brand-primary text-brand-primary hover:bg-brand-light ${isBatchMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <Save className="w-4 h-4" />
                         Create & Print Label

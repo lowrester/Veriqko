@@ -107,6 +107,48 @@ class JobRepository:
 
         return await self.get(job.id)
 
+    async def create_batch(self, data: JobBatchCreate, user_id: str) -> list[Job]:
+        """Create multiple jobs."""
+        now = datetime.now(timezone.utc)
+        jobs = []
+        
+        common = data.common_data or {}
+        device_id = common.get("device_id")
+        
+        for sn in data.serial_numbers:
+            job = Job(
+                id=str(uuid4()),
+                device_id=device_id,
+                serial_number=sn,
+                imei=common.get("imei"),
+                customer_reference=data.customer_reference or common.get("customer_reference"),
+                batch_id=data.batch_id or common.get("batch_id"),
+                intake_condition=common.get("intake_condition"),
+                status=JobStatus.INTAKE,
+                assigned_technician_id=user_id,
+                intake_started_at=now,
+            )
+            self.db.add(job)
+            jobs.append(job)
+            
+        await self.db.flush()
+
+        # Create history entries
+        for job in jobs:
+            history = JobHistory(
+                id=str(uuid4()),
+                job_id=job.id,
+                from_status=None,
+                to_status=JobStatus.INTAKE,
+                changed_by_id=user_id,
+                changed_at=now,
+                notes="Job created (Batch)",
+            )
+            self.db.add(history)
+            
+        await self.db.flush()
+        return jobs
+
     async def update(self, job_id: str, data: JobUpdate) -> Job | None:
         """Update a job."""
         job = await self.get(job_id)
@@ -242,6 +284,10 @@ class JobService:
     async def create(self, data: JobCreate, user_id: str) -> Job:
         """Create a new job."""
         return await self.repo.create(data, user_id)
+
+    async def create_batch(self, data: JobBatchCreate, user_id: str) -> list[Job]:
+        """Create multiple jobs."""
+        return await self.repo.create_batch(data, user_id)
 
     async def update(self, job_id: str, data: JobUpdate) -> Job | None:
         """Update a job."""

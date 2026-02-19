@@ -114,6 +114,10 @@ async def list_jobs(
     ]
 
 
+    job = await service.create(data, current_user.id)
+    return _job_to_response(job)
+
+
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(
     data: JobCreate,
@@ -124,6 +128,29 @@ async def create_job(
     service = JobService(db)
     job = await service.create(data, current_user.id)
     return _job_to_response(job)
+
+
+@router.post("/batch", response_model=list[JobResponse], status_code=status.HTTP_201_CREATED)
+async def create_jobs_batch(
+    data: JobBatchCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Create multiple jobs at once."""
+    service = JobService(db)
+    jobs = await service.create_batch(data, current_user.id)
+    return [_job_to_response(job) for job in jobs]
+
+
+@router.get("/security/check-imei/{imei}")
+async def check_imei_security(
+    imei: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    """Check if an IMEI is blacklisted."""
+    from veriqko.jobs.security import check_imei_blacklist
+    is_blacklisted, reason = await check_imei_blacklist(imei)
+    return {"is_blacklisted": is_blacklisted, "reason": reason}
 
 
 @router.get("/{job_id}", response_model=JobResponse)

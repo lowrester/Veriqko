@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from veriqko.config import get_settings
 from veriqko.errors.exceptions import VeriqkoError
@@ -24,10 +26,25 @@ async def lifespan(app: FastAPI):
     (settings.storage_base_path / "evidence").mkdir(exist_ok=True)
     (settings.storage_base_path / "reports").mkdir(exist_ok=True)
 
+    # Initialize Scheduler
+    scheduler = AsyncIOScheduler()
+    from veriqko.cron.sla_checker import run_sla_checker
+    
+    # Run SLA check every 15 minutes
+    scheduler.add_job(
+        run_sla_checker,
+        IntervalTrigger(minutes=15),
+        id="sla_checker",
+        replace_existing=True,
+    )
+    
+    scheduler.start()
+    app.state.scheduler = scheduler
+
     yield
 
     # Shutdown
-    pass
+    scheduler.shutdown()
 
 
 def create_app() -> FastAPI:
