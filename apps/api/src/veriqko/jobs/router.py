@@ -18,7 +18,6 @@ from veriqko.jobs.schemas import (
     JobResponse,
     JobTransition,
     JobUpdate,
-)
     TransitionResponse,
     TestStepResponse,
     TestResultCreate,
