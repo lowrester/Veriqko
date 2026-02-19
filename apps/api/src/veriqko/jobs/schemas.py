@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class JobCreate(BaseModel):
@@ -21,7 +21,7 @@ class JobBatchCreate(BaseModel):
     """Schema for creating multiple jobs in one go."""
 
     common_data: Optional[dict] = Field(None, description="Common fields for all jobs (brand, model, etc.)")
-    serial_numbers: list[str] = Field(..., min_items=1)
+    serial_numbers: list[str] = Field(..., min_length=1)
     batch_id: Optional[str] = None
     customer_reference: Optional[str] = None
 
@@ -53,8 +53,7 @@ class DeviceSummary(BaseModel):
     device_type: str
     model: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserSummary(BaseModel):
@@ -64,8 +63,7 @@ class UserSummary(BaseModel):
     full_name: str
     email: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StationSummary(BaseModel):
@@ -75,8 +73,7 @@ class StationSummary(BaseModel):
     name: str
     station_type: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TestProgressSummary(BaseModel):
@@ -120,8 +117,7 @@ class JobResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class JobListResponse(BaseModel):
@@ -137,8 +133,7 @@ class JobListResponse(BaseModel):
     customer_reference: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TransitionResponse(BaseModel):
@@ -161,8 +156,7 @@ class JobHistoryResponse(BaseModel):
     changed_at: datetime
     notes: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EvidenceSummary(BaseModel):
@@ -172,8 +166,7 @@ class EvidenceSummary(BaseModel):
     evidence_type: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TestStepResponse(BaseModel):
@@ -190,8 +183,7 @@ class TestStepResponse(BaseModel):
     notes: Optional[str] = None
     evidence: list[EvidenceSummary] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TestResultCreate(BaseModel):
