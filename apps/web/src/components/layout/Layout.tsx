@@ -46,8 +46,9 @@ export function Layout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <Link to="/" className="text-xl font-bold text-blue-600">
-              Veriqko
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="Veriqko" className="h-8 w-auto" />
+              <span className="text-xl font-bold text-blue-600">Veriqko</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

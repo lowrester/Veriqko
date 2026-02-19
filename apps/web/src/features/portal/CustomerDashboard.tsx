@@ -86,7 +86,7 @@ export function CustomerDashboard() {
                                             {job.customer_reference || '-'}
                                         </td>
                                         <td className="px-6 py-3 text-text-secondary">
-                                            {job.device_platform} {job.device_model}
+                                            {job.device_type} {job.device_model}
                                         </td>
                                         <td className="px-6 py-3">
                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${STATUS_COLORS[job.status as JobStatus]}-100 text-${STATUS_COLORS[job.status as JobStatus]}-800 dark:bg-${STATUS_COLORS[job.status as JobStatus]}-900/30 dark:text-${STATUS_COLORS[job.status as JobStatus]}-300`}>

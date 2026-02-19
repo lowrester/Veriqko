@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileCode, Plus, Trash2, Edit2, Check, X, Save } from 'lucide-react';
-import { api, ApiError } from '@/api/client';
+import { FileCode, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
+import { api } from '@/api/client';
 import { formatDate } from '@/types';
 
 interface LabelTemplate {

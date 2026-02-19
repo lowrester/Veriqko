@@ -108,7 +108,7 @@ export function JobDetailPage() {
           </button>
           <h1 className="text-2xl font-bold text-text-primary">{job.serial_number}</h1>
           <p className="text-text-secondary">
-            {job.device?.platform} {job.device?.model}
+            {job.device?.device_type} {job.device?.model}
           </p>
         </div>
         <span className={`badge-${job.status} text-sm`}>
@@ -151,7 +151,7 @@ export function JobDetailPage() {
           <h2 className="font-semibold text-text-primary mb-4">Job Details</h2>
           <dl className="space-y-3">
             <DetailRow label="Serial Number" value={job.serial_number} />
-            <DetailRow label="Platform" value={job.device?.platform || '-'} />
+            <DetailRow label="Device Type" value={job.device?.device_type || '-'} />
             <DetailRow label="Model" value={job.device?.model || '-'} />
             <DetailRow label="Technician" value={job.assigned_technician?.full_name || '-'} />
             <DetailRow label="Customer Reference" value={job.customer_reference || '-'} />
