@@ -64,24 +64,59 @@ VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-$(hostname -f)}"
 GITHUB_REPO_SSH="git@github.com:lowrester/Veriqo.git"
 VERIQKO_BRANCH="${VERIQKO_BRANCH:-main}"
 
-# Database (read from env or credentials file)
+# Database settings
 DB_NAME="${DB_NAME:-veriqko}"
 DB_USER="${DB_USER:-veriqko}"
 
-# Try to load credentials from the file written by deploy-ubuntu.sh
-CREDENTIALS_FILE="/root/veriqko-credentials.txt"
-if [ -f "$CREDENTIALS_FILE" ]; then
-    DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(grep "^Password:" "$CREDENTIALS_FILE" | head -1 | awk '{print $2}')}"
-    JWT_SECRET="${VERIQKO_JWT_SECRET:-$(grep -A1 "JWT SECRET" "$CREDENTIALS_FILE" | tail -1 | tr -d ' ')}"
-    ADMIN_EMAIL="${VERIQKO_ADMIN_EMAIL:-$(grep "^Email:" "$CREDENTIALS_FILE" | head -1 | awk '{print $2}')}"
-    ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(grep "^Password:" "$CREDENTIALS_FILE" | tail -1 | awk '{print $2}')}"
+# --- Credential Handling ---
+
+# Function to secure prompt
+secure_prompt() {
+    local prompt="$1"
+    local var_name="$2"
+    local default_val="$3"
+    local secret="$4"
+    
+    if [ -z "${!var_name:-}" ]; then
+        if [ "$secret" = "true" ]; then
+            printf "${CYAN}[PROMPT]${NC} %s (will be hidden): " "$prompt"
+            read -rs val
+            echo ""
+        else
+            printf "${CYAN}[PROMPT]${NC} %s [%s]: " "$prompt" "$default_val"
+            read -r val
+        fi
+        
+        if [ -z "$val" ]; then
+            eval "$var_name=\"$default_val\""
+        else
+            eval "$var_name=\"$val\""
+        fi
+    fi
+}
+
+# 1. Database & JWT Security
+if [ -z "${VERIQKO_DB_PASSWORD:-}" ]; then
+    VERIQKO_DB_PASSWORD=$(openssl rand -base64 24)
+    log "Generated random Database Password"
+fi
+if [ -z "${VERIQKO_JWT_SECRET:-}" ]; then
+    VERIQKO_JWT_SECRET=$(openssl rand -base64 48)
+    log "Generated random JWT Secret"
 fi
 
-# Fallback to fresh random values if still unset
-DB_PASSWORD="${DB_PASSWORD:-$(openssl rand -base64 24)}"
-JWT_SECRET="${JWT_SECRET:-$(openssl rand -base64 48)}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@${VERIQKO_DOMAIN}}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
+# 2. Admin Credentials (Interactive Prompt)
+step "Security Configuration"
+echo "We need to set up your primary Administrator account."
+echo "Leaving these blank will generate random credentials shown at the end."
+
+secure_prompt "Admin Email" "ADMIN_EMAIL" "admin@${VERIQKO_DOMAIN}" "false"
+secure_prompt "Admin Password" "ADMIN_PASSWORD" "$(openssl rand -base64 12)" "true"
+
+DB_PASSWORD="$VERIQKO_DB_PASSWORD"
+JWT_SECRET="$VERIQKO_JWT_SECRET"
+ADMIN_EMAIL="$ADMIN_EMAIL"
+ADMIN_PASSWORD="$ADMIN_PASSWORD"
 
 GITHUB_KEY="$VERIQKO_HOME/.ssh/github_deploy"
 
