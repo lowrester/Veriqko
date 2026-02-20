@@ -37,6 +37,11 @@ target_metadata = Base.metadata
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
+# Debug: Print masked URL to help diagnose connection issues
+import re
+masked_url = re.sub(r':([^@]+)@', ':***@', settings.database_url)
+print(f"INFO [alembic.env] Connecting to: {masked_url}", file=sys.stderr)
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
