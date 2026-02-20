@@ -111,6 +111,22 @@ curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqo/main/infra/deploy-
 sudo -E bash /tmp/deploy-ubuntu.sh
 ```
 
+### Central Configuration (Recommended)
+
+Instead of passing environment variables manually, you can create a `config.env` file in the `infra/` directory. All scripts will automatically source it.
+
+1.  Copy the template: `cp infra/config.env.template infra/config.env`
+2.  Edit `infra/config.env` with your desired settings.
+3.  Run the scripts; they will now use your pre-configured values.
+
+Example:
+```bash
+# On your host/VM:
+cp infra/config.env.template infra/config.env
+nano infra/config.env
+sudo bash infra/deploy-ubuntu.sh
+```
+
 ---
 
 ## Architecture

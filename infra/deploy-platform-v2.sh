@@ -43,8 +43,13 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 #===============================================================================
-# Configuration
+# Configuration — Source from env, local file, or credentials
 #===============================================================================
+
+# Source configuration file if it exists in the same directory
+if [ -f "$(dirname "$0")/config.env" ]; then
+    source "$(dirname "$0")/config.env"
+fi
 
 VERIQKO_USER="${VERIQKO_USER:-veriqko}"
 VERIQKO_HOME="/opt/veriqko"

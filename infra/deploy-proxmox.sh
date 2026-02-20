@@ -31,8 +31,13 @@
 set -euo pipefail
 
 #===============================================================================
-# Configuration — edit or override via environment variables
+# Configuration — edit or override via environment variables or config.env
 #===============================================================================
+
+# Source configuration file if it exists in the same directory
+if [ -f "$(dirname "$0")/config.env" ]; then
+    source "$(dirname "$0")/config.env"
+fi
 
 # VM
 VMID="${VMID:-201}"
