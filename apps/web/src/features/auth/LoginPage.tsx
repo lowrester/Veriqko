@@ -38,10 +38,9 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-bg-secondary px-4">
       <div className="w-full max-w-sm">
         <div className="card">
-          <div className="text-center mb-6 flex flex-col items-center">
-            <img src={logo} alt="Veriqko" className="h-10 w-auto mb-2" />
-            <h1 className="text-xl font-bold">Veriqko</h1>
-            <p className="text-xs text-text-secondary mt-0.5">Console Verification Platform</p>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <img src={logo} alt="Veriqko" className="h-20 w-auto mb-4" />
+            <p className="text-sm font-semibold text-text-primary mt-2 uppercase tracking-widest">Verification platform</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">

@@ -59,6 +59,8 @@ class JobTransition(BaseModel):
 
     target_status: str
     notes: Optional[str] = None
+    is_fully_tested: bool = True
+    reason: Optional[str] = None
 
 
 class DeviceSummary(BaseModel):
@@ -137,6 +139,10 @@ class JobResponse(BaseModel):
     picea_erase_confirmed: bool = False
     picea_erase_certificate: Optional[str] = None
     picea_diagnostics_raw: Optional[dict] = None
+
+    # Overrides
+    is_fully_tested: bool = True
+    skip_reason: Optional[str] = None
 
     created_at: datetime
     updated_at: datetime

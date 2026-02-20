@@ -34,6 +34,15 @@ async def list_reports(
     """List all reports for a job."""
     settings = get_settings()
 
+    # Security check for customers
+    from veriqko.enums import UserRole
+    if current_user.role == UserRole.CUSTOMER:
+        job_stmt = select(Job).where(Job.id == job_id)
+        job_res = await db.execute(job_stmt)
+        job = job_res.scalar_one_or_none()
+        if not job or job.customer_reference != current_user.email:
+            raise HTTPException(status_code=403, detail="Unauthorised Access")
+
     stmt = (
         select(Report)
         .where(Report.job_id == job_id)
@@ -85,6 +94,12 @@ async def create_report(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found",
         )
+
+    # Security check for customers
+    from veriqko.enums import UserRole
+    if current_user.role == UserRole.CUSTOMER:
+        if job.customer_reference != current_user.email:
+            raise HTTPException(status_code=403, detail="Unauthorised Access")
 
     # Validate scope and variant
     try:

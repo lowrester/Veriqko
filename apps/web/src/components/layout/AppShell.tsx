@@ -58,9 +58,9 @@ export function AppShell() {
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="flex items-center justify-between h-14 px-4 border-b border-border">
+                    <div className="flex items-center justify-between h-20 px-4 border-b border-border">
                         <Link to="/" className="flex items-center">
-                            <img src={logo} alt="Veriqko" className="h-7 w-auto" />
+                            <img src={logo} alt="Veriqko" className="h-12 w-auto" />
                         </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
@@ -123,7 +123,7 @@ export function AppShell() {
             {/* Main content */}
             <div className="lg:pl-[240px]">
                 {/* Top bar */}
-                <header className="sticky top-0 z-30 h-14 bg-bg-primary border-b border-border">
+                <header className="sticky top-0 z-30 h-20 bg-bg-primary border-b border-border">
                     <div className="flex items-center justify-between h-full px-4">
                         <button
                             onClick={() => setSidebarOpen(true)}

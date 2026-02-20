@@ -42,6 +42,12 @@ export interface Job {
   picea_mdm_locked?: boolean
   picea_erase_confirmed?: boolean
   picea_erase_certificate?: string
+  picea_diagnostics_raw?: any
+  ticket_id?: number
+
+  // Manual completion
+  is_fully_tested?: boolean
+  skip_reason?: string
 }
 
 export interface JobListItem {
@@ -76,6 +82,8 @@ export interface UpdateJobRequest {
 export interface TransitionRequest {
   target_status: string
   notes?: string
+  is_fully_tested?: boolean
+  reason?: string
 }
 
 export interface TransitionResponse {

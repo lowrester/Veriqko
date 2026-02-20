@@ -106,6 +106,10 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     picea_erase_certificate: Mapped[str | None] = mapped_column(Text, nullable=True)
     picea_diagnostics_raw: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
+    # Manual completion overrides
+    is_fully_tested: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=True)
+    skip_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Relationships
     device = relationship("Device", back_populates="jobs")
     current_station = relationship("Station", back_populates="jobs")

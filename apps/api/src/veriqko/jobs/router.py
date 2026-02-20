@@ -102,6 +102,7 @@ async def list_jobs(
         search=search,
         limit=limit,
         offset=offset,
+        current_user=current_user,
     )
 
     return [
@@ -210,6 +211,8 @@ async def transition_job(
         target_status=data.target_status,
         user_id=current_user.id,
         notes=data.notes,
+        is_fully_tested=data.is_fully_tested,
+        skip_reason=data.reason,
     )
 
     if job is None:

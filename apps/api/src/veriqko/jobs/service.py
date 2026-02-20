@@ -45,8 +45,11 @@ class JobRepository:
         search: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
+        current_user: Optional[User] = None,
     ) -> list[Job]:
         """List jobs with optional filtering."""
+        from veriqko.enums import UserRole
+        
         stmt = (
             select(Job)
             .options(
@@ -56,9 +59,11 @@ class JobRepository:
             )
             .where(Job.deleted_at.is_(None))
             .order_by(Job.created_at.desc())
-            .limit(limit)
-            .offset(offset)
         )
+
+        # Customer filtering
+        if current_user and current_user.role == UserRole.CUSTOMER:
+            stmt = stmt.where(Job.customer_reference == current_user.email)
 
         if status:
             stmt = stmt.where(Job.status == status)
@@ -76,6 +81,11 @@ class JobRepository:
                     Job.ticket_id.cast(String).ilike(search_term),
                 )
             )
+
+        if limit:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -187,6 +197,8 @@ class JobRepository:
         status: JobStatus,
         user_id: str,
         notes: Optional[str] = None,
+        is_fully_tested: bool = True,
+        skip_reason: Optional[str] = None,
     ) -> Job | None:
         """Update job status and record history."""
         job = await self.get(job_id)
@@ -198,6 +210,9 @@ class JobRepository:
 
         # Update status
         job.status = status
+        job.is_fully_tested = is_fully_tested
+        if skip_reason:
+            job.skip_reason = skip_reason
 
         # Update relevant timestamp
         if status == JobStatus.RESET:
@@ -221,7 +236,7 @@ class JobRepository:
             to_status=status,
             changed_by_id=user_id,
             changed_at=now,
-            notes=notes,
+            notes=notes or skip_reason,
         )
         self.db.add(history)
         await self.db.flush()
@@ -289,15 +304,23 @@ class JobService:
         search: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
+        current_user: Optional[User] = None,
     ) -> list[Job]:
         """List jobs."""
+        from veriqko.enums import UserRole
+        
         status_enum = JobStatus(status) if status else None
+        
+        # Enforce strict customer filtering in the repository or here
+        # Actually, let's update JobRepository.list to take current_user
+        
         return await self.repo.list(
             status=status_enum,
             technician_id=technician_id,
             search=search,
             limit=limit,
             offset=offset,
+            current_user=current_user
         )
 
     async def create(self, data: JobCreate, user_id: str) -> Job:
@@ -318,6 +341,8 @@ class JobService:
         target_status: str,
         user_id: str,
         notes: Optional[str] = None,
+        is_fully_tested: bool = True,
+        skip_reason: Optional[str] = None,
     ) -> tuple[Job | None, TransitionResult]:
         """Transition job to a new status."""
         job = await self.repo.get(job_id)
@@ -335,7 +360,14 @@ class JobService:
         )
 
         if result.success:
-            job = await self.repo.update_status(job_id, target, user_id, notes)
+            job = await self.repo.update_status(
+                job_id, 
+                target, 
+                user_id, 
+                notes, 
+                is_fully_tested=is_fully_tested, 
+                skip_reason=skip_reason
+            )
             
             # Auto-trigger Picea sync when moving to RESET
             if target == JobStatus.RESET:

@@ -81,6 +81,8 @@ export function RunnerPage() {
     const { id: jobId } = useParams<{ id: string }>()
     const queryClient = useQueryClient()
     const [showPrintModal, setShowPrintModal] = useState(false)
+    const [showManualCompleteModal, setShowManualCompleteModal] = useState(false)
+    const [manualReason, setManualReason] = useState('')
     const { features } = useFeatureStore()
 
     // Fetch job details
@@ -148,10 +150,17 @@ export function RunnerPage() {
 
     // Transition mutation (for Complete Job)
     const transitionMutation = useMutation({
-        mutationFn: (targetStatus: string) => jobsApi.transition(jobId!, { target_status: targetStatus }),
+        mutationFn: (data: { targetStatus: string, isFullyTested?: boolean, reason?: string }) =>
+            jobsApi.transition(jobId!, {
+                target_status: data.targetStatus,
+                is_fully_tested: data.isFullyTested ?? true,
+                reason: data.reason
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['job', jobId] })
             addToast('Jobbet har uppdaterats.', 'success')
+            setShowManualCompleteModal(false)
+            setManualReason('')
         },
         onError: (error: any) => {
             addToast(`Misslyckades att uppdatera status: ${error.message || 'Okänt fel'}`, 'error')
@@ -231,10 +240,20 @@ export function RunnerPage() {
                     className="btn-secondary flex items-center gap-2 mr-2 border-purple-200 hover:border-purple-300 text-purple-700"
                 >
                     <RotateCw className={`w-4 h-4 ${piceaMutation.isPending ? 'animate-spin' : ''}`} />
-                    {piceaMutation.isPending ? 'Fetching...' : 'Fetch diagnostics'}
+                    {piceaMutation.isPending ? 'Diagnostics' : 'Fetch diagnostics'}
                 </button>
+                {nextStatus && (
+                    <button
+                        onClick={() => setShowManualCompleteModal(true)}
+                        disabled={transitionMutation.isPending}
+                        className="btn-secondary flex items-center gap-2 mr-2 border-red-100 text-red-700 hover:bg-red-50"
+                    >
+                        <ShieldAlert className="w-4 h-4" />
+                        Skip steps
+                    </button>
+                )}
                 <button
-                    onClick={() => nextStatus && transitionMutation.mutate(nextStatus)}
+                    onClick={() => nextStatus && transitionMutation.mutate({ targetStatus: nextStatus })}
                     disabled={!canComplete}
                     className={`btn-primary flex items-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={!allMandatoryDone ? "Alla obligatoriska steg måste vara klara" : ""}
@@ -351,6 +370,56 @@ export function RunnerPage() {
                         model: job.device?.model || 'Unknown'
                     }}
                 />
+            )}
+
+            {/* Manual Complete Modal */}
+            {showManualCompleteModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-3 mb-4 text-red-600">
+                            <ShieldAlert className="w-6 h-6" />
+                            <h2 className="text-xl font-bold">Manual Override</h2>
+                        </div>
+                        <p className="text-gray-600 mb-6">
+                            You are about to skip the remaining mandatory steps for the <strong>{job.status}</strong> stage.
+                            This will mark the unit as "Partially Tested" in the final report.
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Reason for override <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    className="w-full rounded-xl border-gray-200 focus:ring-red-500 focus:border-red-500 min-h-[100px]"
+                                    placeholder="e.g. Broken screen prevents touch test, Device incompatible with Picea..."
+                                    value={manualReason}
+                                    onChange={(e) => setManualReason(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowManualCompleteModal(false)}
+                                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => nextStatus && transitionMutation.mutate({
+                                        targetStatus: nextStatus,
+                                        isFullyTested: false,
+                                        reason: manualReason
+                                    })}
+                                    disabled={!manualReason.trim() || transitionMutation.isPending}
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {transitionMutation.isPending ? 'Processing...' : 'Proceed'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )
