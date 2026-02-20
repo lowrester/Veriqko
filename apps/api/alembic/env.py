@@ -45,11 +45,21 @@ masked_url = re.sub(r'(://[^:]+):([^@]+)@', r'\1:***@', settings.database_url)
 print(f"INFO [alembic.env] Connecting to: {masked_url}", file=sys.stderr)
 
 # Check if .env was found
-env_file = Path(settings.model_config.get("env_file", ".env")[0])
+env_file_path = settings.model_config.get("env_file")
+if isinstance(env_file_path, list):
+    env_file = Path(env_file_path[0])
+else:
+    env_file = Path(env_file_path or ".env")
+
 if env_file.exists():
     print(f"INFO [alembic.env] Loaded config from: {env_file.absolute()}", file=sys.stderr)
 else:
     print(f"WARN [alembic.env] Config file NOT FOUND at: {env_file.absolute()}", file=sys.stderr)
+
+# Check if using the default password
+default_db_url = "postgresql+asyncpg://veriqko:veriqko@localhost:5432/veriqko"
+is_default = settings.database_url == default_db_url
+print(f"DEBUG [alembic.env] Using DEFAULT password: {is_default}", file=sys.stderr)
 
 
 def run_migrations_offline() -> None:
