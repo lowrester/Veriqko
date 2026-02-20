@@ -37,10 +37,18 @@ target_metadata = Base.metadata
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
-# Debug: Print masked URL to help diagnose connection issues
+# Debug: Print masked URL and .env status to help diagnose connection issues
 import re
-masked_url = re.sub(r':([^@]+)@', ':***@', settings.database_url)
+# Improved masking: keep the protocol and username, hide the password
+masked_url = re.sub(r'(://[^:]+):([^@]+)@', r'\1:***@', settings.database_url)
 print(f"INFO [alembic.env] Connecting to: {masked_url}", file=sys.stderr)
+
+# Check if .env was found
+env_file = Path(settings.model_config.get("env_file", ".env")[0])
+if env_file.exists():
+    print(f"INFO [alembic.env] Loaded config from: {env_file.absolute()}", file=sys.stderr)
+else:
+    print(f"WARN [alembic.env] Config file NOT FOUND at: {env_file.absolute()}", file=sys.stderr)
 
 
 def run_migrations_offline() -> None:
