@@ -187,7 +187,20 @@ export function RunnerPage() {
     }
 
     const nextStatus = getNextStatus()
+    const isPiceaSuccess = job.picea_verify_status === 'SUCCESS' && job.picea_erase_confirmed
     const canComplete = allMandatoryDone && nextStatus && !transitionMutation.isPending
+
+    const handleTransition = () => {
+        if (!nextStatus) return
+
+        // If it's the final completion and Picea isn't a success, ask for a reason
+        if (nextStatus === 'completed' && !isPiceaSuccess) {
+            setShowManualCompleteModal(true)
+            return
+        }
+
+        transitionMutation.mutate({ targetStatus: nextStatus })
+    }
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
@@ -242,18 +255,8 @@ export function RunnerPage() {
                     <RotateCw className={`w-4 h-4 ${piceaMutation.isPending ? 'animate-spin' : ''}`} />
                     {piceaMutation.isPending ? 'Diagnostics' : 'Fetch diagnostics'}
                 </button>
-                {nextStatus && (
-                    <button
-                        onClick={() => setShowManualCompleteModal(true)}
-                        disabled={transitionMutation.isPending}
-                        className="btn-secondary flex items-center gap-2 mr-2 border-red-100 text-red-700 hover:bg-red-50"
-                    >
-                        <ShieldAlert className="w-4 h-4" />
-                        Skip steps
-                    </button>
-                )}
                 <button
-                    onClick={() => nextStatus && transitionMutation.mutate({ targetStatus: nextStatus })}
+                    onClick={handleTransition}
                     disabled={!canComplete}
                     className={`btn-primary flex items-center gap-2 ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={!allMandatoryDone ? "Alla obligatoriska steg måste vara klara" : ""}
@@ -376,23 +379,23 @@ export function RunnerPage() {
             {showManualCompleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-3 mb-4 text-red-600">
+                        <div className="flex items-center gap-3 mb-4 text-amber-600">
                             <ShieldAlert className="w-6 h-6" />
-                            <h2 className="text-xl font-bold">Manual Override</h2>
+                            <h2 className="text-xl font-bold">Manual Certification</h2>
                         </div>
                         <p className="text-gray-600 mb-6">
-                            You are about to skip the remaining mandatory steps for the <strong>{job.status}</strong> stage.
-                            This will mark the unit as "Partially Tested" in the final report.
+                            This unit is missing full Picea verification (Diagnostics or Data Erasure).
+                            By proceeding, you certify that manual verification has been completed.
                         </p>
 
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Reason for override <span className="text-red-500">*</span>
+                                    Reason for manual bypass <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
-                                    className="w-full rounded-xl border-gray-200 focus:ring-red-500 focus:border-red-500 min-h-[100px]"
-                                    placeholder="e.g. Broken screen prevents touch test, Device incompatible with Picea..."
+                                    className="w-full rounded-xl border-gray-200 focus:ring-amber-500 focus:border-amber-500 min-h-[100px]"
+                                    placeholder="e.g. Device incompatible with Picea, Sync timeout, etc..."
                                     value={manualReason}
                                     onChange={(e) => setManualReason(e.target.value)}
                                 />
@@ -412,9 +415,9 @@ export function RunnerPage() {
                                         reason: manualReason
                                     })}
                                     disabled={!manualReason.trim() || transitionMutation.isPending}
-                                    className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    {transitionMutation.isPending ? 'Processing...' : 'Proceed'}
+                                    {transitionMutation.isPending ? 'Processing...' : 'Certify & Complete'}
                                 </button>
                             </div>
                         </div>

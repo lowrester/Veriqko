@@ -29,3 +29,5 @@
 8:54:19 AM [vite] hmr update /src/features/auth/LoginPage.tsx, /src/index.css
 9:02:51 AM [vite] hmr update /src/features/jobs/NewJobPage.tsx, /src/index.css, /src/features/jobs/JobsPage.tsx, /src/features/portal/CustomerDashboard.tsx, /src/features/jobs/JobDetailPage.tsx, /src/features/runner/RunnerPage.tsx
 9:03:08 AM [vite] hmr update /src/features/runner/RunnerPage.tsx, /src/index.css
+9:28:10 AM [vite] hmr update /src/features/runner/RunnerPage.tsx, /src/index.css
+9:28:26 AM [vite] hmr update /src/features/runner/RunnerPage.tsx, /src/index.css
