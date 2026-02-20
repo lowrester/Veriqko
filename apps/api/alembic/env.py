@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import sys
 import os
+from pathlib import Path
 
 # Add src directory to path so we can import veriqko package
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
