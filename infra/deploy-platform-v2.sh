@@ -415,10 +415,16 @@ step "7/7 — Services & Nginx"
 
 # --- Systemd API service ---
 log "Creating veriqko-api systemd service..."
+
+# Tune worker count: (2 x cores) + 1, min 4 for production
+CPU_CORES=$(nproc)
+WORKERS=$(( (CPU_CORES * 2) + 1 ))
+[ "$WORKERS" -lt 4 ] && WORKERS=4
+
 cat > /etc/systemd/system/veriqko-api.service <<EOF
 [Unit]
 Description=Veriqko API Server
-Documentation=https://github.com/lowrester/Veriqo
+Documentation=https://github.com/lowrester/Veriqko
 After=network.target postgresql.service
 Requires=postgresql.service
 
@@ -430,7 +436,12 @@ WorkingDirectory=${API_DIR}
 Environment=PATH=${API_DIR}/.venv/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PYTHONPATH=${API_DIR}/src
 EnvironmentFile=${API_DIR}/.env
-ExecStart=${API_DIR}/.venv/bin/uvicorn veriqko.main:app --host 127.0.0.1 --port 8000 --workers 2
+# Production Tuning: increased workers and timeout
+ExecStart=${API_DIR}/.venv/bin/uvicorn veriqko.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers $WORKERS \
+    --timeout-keep-alive 60
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=always
 RestartSec=5

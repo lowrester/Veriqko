@@ -93,7 +93,10 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ufw \
     htop \
     unzip \
-    jq
+    jq \
+    fail2ban \
+    logrotate \
+    rsync
 
 #===============================================================================
 # QEMU Guest Agent (Proxmox)
@@ -325,14 +328,77 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 systemctl enable nginx
 
 #===============================================================================
+# Production Hardening: Fail2Ban & Logrotate
+#===============================================================================
+
+log "Configuring Fail2Ban..."
+cat > /etc/fail2ban/jail.local <<EOF
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 3600
+EOF
+systemctl restart fail2ban
+
+log "Configuring Logrotate for Veriqko..."
+cat > /etc/logrotate.d/veriqko <<EOF
+/opt/veriqko/logs/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 $VERIQKO_USER $VERIQKO_USER
+    sharedscripts
+    postrotate
+        systemctl reload nginx > /dev/null 2>/dev/null || true
+        systemctl restart veriqko-api > /dev/null 2>/dev/null || true
+    endscript
+}
+EOF
+
+#===============================================================================
 # Veriqko User and Directories
 #===============================================================================
 
 log "Creating veriqko system user and directories..."
 id -u "$VERIQKO_USER" &>/dev/null || useradd -r -m -d "$VERIQKO_HOME" -s /bin/bash "$VERIQKO_USER"
 
-mkdir -p "$VERIQKO_HOME"/{app,data,logs,backups}
+mkdir -p "$VERIQKO_HOME"/{app,data,logs,backups,scripts}
 chown -R "$VERIQKO_USER:$VERIQKO_USER" "$VERIQKO_HOME"
+
+log "Creating scheduled backup script..."
+BACKUP_SCRIPT="$VERIQKO_HOME/scripts/backup.sh"
+cat > "$BACKUP_SCRIPT" <<EOF
+#!/bin/bash
+# Veriqko Nightly Backup Script
+TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="$VERIQKO_HOME/backups"
+KEEP_DAYS=7
+
+echo "Starting backup: \$TIMESTAMP"
+
+# Database Backup
+sudo -u postgres pg_dump $DB_NAME > "\$BACKUP_DIR/db_\$TIMESTAMP.sql"
+
+# Config Backup
+cp "$VERIQKO_HOME/app/apps/api/.env" "\$BACKUP_DIR/env_api_\$TIMESTAMP" 2>/dev/null || true
+
+# Cleanup old backups
+find "\$BACKUP_DIR" -type f -mtime +\$KEEP_DAYS -delete
+
+echo "Backup complete. Files in \$BACKUP_DIR"
+EOF
+
+chmod +x "$BACKUP_SCRIPT"
+chown "$VERIQKO_USER:$VERIQKO_USER" "$BACKUP_SCRIPT"
+
+# Add cron job for nightly backup at 03:00
+(crontab -l 2>/dev/null; echo "0 3 * * * $BACKUP_SCRIPT >> $VERIQKO_HOME/logs/backup.log 2>&1") | crontab -
 
 # Create systemd user service dir for veriqko user (for ssh-agent)
 VERIQKO_SYSTEMD_DIR="/home/$VERIQKO_USER/.config/systemd/user"
