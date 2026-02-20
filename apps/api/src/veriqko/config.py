@@ -12,7 +12,11 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).parent.parent.parent / ".env",
+        env_file=[
+            Path(__file__).parent.parent.parent / ".env",
+            ".env",
+            "/opt/veriqko/app/apps/api/.env"
+        ],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

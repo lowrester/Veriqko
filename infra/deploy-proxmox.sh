@@ -52,10 +52,10 @@ UBUNTU_VERSION="${UBUNTU_VERSION:-jammy}"   # jammy=22.04, noble=24.04
 # Veriqko application
 VERIQKO_DOMAIN="${VERIQKO_DOMAIN:-veriqko.local}"
 VERIQKO_BRANCH="${VERIQKO_BRANCH:-main}"
-VERIQKO_DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(openssl rand -base64 24)}"
-VERIQKO_JWT_SECRET="${VERIQKO_JWT_SECRET:-$(openssl rand -base64 48)}"
+VERIQKO_DB_PASSWORD="${VERIQKO_DB_PASSWORD:-$(openssl rand -hex 24)}"
+VERIQKO_JWT_SECRET="${VERIQKO_JWT_SECRET:-$(openssl rand -hex 48)}"
 VERIQKO_ADMIN_EMAIL="${VERIQKO_ADMIN_EMAIL:-admin@${VERIQKO_DOMAIN}}"
-VERIQKO_ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -base64 16)}"
+VERIQKO_ADMIN_PASSWORD="${VERIQKO_ADMIN_PASSWORD:-$(openssl rand -hex 16)}"
 
 # SSH
 PROXMOX_SSH_KEY="/root/.ssh/veriqko_vm_deploy"

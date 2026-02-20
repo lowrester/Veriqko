@@ -97,11 +97,11 @@ secure_prompt() {
 
 # 1. Database & JWT Security
 if [ -z "${VERIQKO_DB_PASSWORD:-}" ]; then
-    VERIQKO_DB_PASSWORD=$(openssl rand -base64 24)
+    VERIQKO_DB_PASSWORD=$(openssl rand -hex 24)
     log "Generated random Database Password"
 fi
 if [ -z "${VERIQKO_JWT_SECRET:-}" ]; then
-    VERIQKO_JWT_SECRET=$(openssl rand -base64 48)
+    VERIQKO_JWT_SECRET=$(openssl rand -hex 48)
     log "Generated random JWT Secret"
 fi
 
