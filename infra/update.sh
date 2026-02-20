@@ -375,20 +375,27 @@ step "6 — Health Check"
 
 log "Waiting for API to come up..."
 HEALTH_OK=false
-for i in $(seq 1 10); do
-    sleep 3
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://192.168.20.120/health 2>/dev/null || echo "000")
+for i in $(seq 1 15); do
+    sleep 4
+    # Check if systemd service is active
+    if ! systemctl is-active veriqko-api &>/dev/null; then
+        log "  Waiting... (service not active yet)"
+        continue
+    fi
+    
+    # Check API on localhost
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/health 2>/dev/null || echo "000")
     if [ "$HTTP_STATUS" = "200" ]; then
         HEALTH_OK=true
         break
     fi
-    log "  Waiting... ($((i*3))s, HTTP $HTTP_STATUS)"
+    log "  Waiting... ($((i*4))s, status: $HTTP_STATUS)"
 done
 
 if [ "$HEALTH_OK" = true ]; then
-    log "✅ Health check passed — API is healthy"
+    log "✅ Health check passed — API is healthy on localhost:8000"
 else
-    warn "⚠️  Health check failed after 30s (HTTP $HTTP_STATUS)"
+    warn "⚠️  Health check failed after 60s (status: $HTTP_STATUS)"
     if [ "$AUTO_ROLLBACK" = true ]; then
         warn "Triggering automatic rollback..."
         rollback

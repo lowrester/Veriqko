@@ -282,12 +282,12 @@ sys.path.insert(0, '$API_DIR/src')
 
 async def main():
     try:
-        from veriqko.db.session import get_async_session_context
+        from veriqko.db.base import async_session_factory
         from veriqko.auth.password import hash_password
         from sqlalchemy import text
         import uuid, datetime
 
-        async with get_async_session_context() as session:
+        async with async_session_factory() as session:
             result = await session.execute(
                 text("SELECT id FROM users WHERE email = :email"),
                 {"email": "$ADMIN_EMAIL"}
@@ -544,20 +544,28 @@ fi
 
 log "Waiting for API to start..."
 HEALTH_OK=false
-for i in $(seq 1 12); do
-    sleep 5
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health 2>/dev/null || echo "000")
+for i in $(seq 1 15); do
+    sleep 4
+    # Check if systemd service is actually running
+    if ! systemctl is-active veriqko-api &>/dev/null; then
+        log "  Waiting... (service not active yet)"
+        continue
+    fi
+    
+    # Check if API is responding on localhost
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/health 2>/dev/null || echo "000")
     if [ "$HTTP_STATUS" = "200" ]; then
         HEALTH_OK=true
         break
     fi
-    log "  Waiting... ($((i*5))s, status: $HTTP_STATUS)"
+    log "  Waiting... ($((i*4))s, status: $HTTP_STATUS)"
 done
 
 if [ "$HEALTH_OK" = true ]; then
-    log "✅ Health check passed — API is responding"
+    log "✅ Health check passed — API is responding on localhost:8000"
 else
-    warn "⚠️  Health check did not return 200 after 60s."
+    warn "⚠️  Health check failed after 60s."
+    warn "   Possible reasons: slow DB connection, port conflict, or app crash."
     warn "   Check logs: journalctl -u veriqko-api -n 50"
     warn "   Or: tail -f $LOGS_DIR/api-error.log"
 fi
