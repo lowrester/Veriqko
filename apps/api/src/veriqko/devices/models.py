@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import String, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from veriqko.db.base import Base, TimestampMixin, UUIDMixin
@@ -39,14 +38,16 @@ class Device(Base, UUIDMixin, TimestampMixin):
 
     __tablename__ = "devices"
 
-    brand_id: Mapped[str] = mapped_column(String(36), nullable=False) # Changed to FK later in migration
-    type_id: Mapped[str] = mapped_column(String(36), nullable=False) # Changed to FK later in migration
+    brand_id: Mapped[str] = mapped_column(ForeignKey("brands.id"), nullable=False)
+    type_id: Mapped[str] = mapped_column(ForeignKey("gadget_types.id"), nullable=False)
     
-    model: Mapped[str] = mapped_column(String(100), nullable=False)  # iPhone 13, Galaxy S21, PS5
-    model_number: Mapped[str | None] = mapped_column(String(50), nullable=True)  # A2633, SM-G991B, CFI-1015A
+    model: Mapped[str] = mapped_column(String(100), nullable=False)  # iPhone 15 Pro, Galaxy S21
+    model_number: Mapped[str | None] = mapped_column(String(50), nullable=True)  # A2848, SM-G991B
+    colour: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Black, White, Silver
+    storage: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 64 GB, 128 GB, 256 GB
 
     # Device-specific test configuration
-    test_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    test_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
     # Relationships
     brand = relationship("Brand", back_populates="devices")

@@ -12,7 +12,7 @@ from veriqko.jobs.models import Job, JobStatus
 from veriqko.users.models import User, UserRole
 
 # Placeholder schemas (defining inline simple ones if no schemas.py)
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class StationBase(BaseModel):
     name: str

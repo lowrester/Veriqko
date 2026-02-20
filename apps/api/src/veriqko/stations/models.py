@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, String
-from sqlalchemy.dialects.postgresql import ENUM, JSONB
+from sqlalchemy import Boolean, String, JSON
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from veriqko.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDMixin
@@ -23,7 +23,7 @@ class Station(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     # Station capabilities
-    capabilities: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    capabilities: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     # Relationships
     jobs = relationship("Job", back_populates="current_station")

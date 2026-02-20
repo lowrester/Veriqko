@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, JSON, UUID
 from sqlalchemy import Identity
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from veriqko.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDMixin
@@ -97,14 +97,14 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     sla_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Intake condition
-    intake_condition: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    intake_condition: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Picea Integration fields
     picea_verify_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     picea_mdm_locked: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
     picea_erase_confirmed: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
     picea_erase_certificate: Mapped[str | None] = mapped_column(Text, nullable=True)
-    picea_diagnostics_raw: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    picea_diagnostics_raw: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     device = relationship("Device", back_populates="jobs")
@@ -143,7 +143,7 @@ class TestStep(Base, UUIDMixin, TimestampMixin):
     requires_evidence: Mapped[bool] = mapped_column(default=False)
     evidence_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    criteria: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    criteria: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     device = relationship("Device", back_populates="test_steps")
@@ -186,7 +186,7 @@ class TestResult(Base, UUIDMixin, TimestampMixin):
     )
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    measurements: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    measurements: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     job = relationship("Job", back_populates="test_results")
@@ -234,7 +234,7 @@ class JobHistory(Base, UUIDMixin):
         nullable=True,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    transition_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    transition_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     job = relationship("Job", back_populates="history")

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 from sqlalchemy import String, Integer, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,5 +26,3 @@ class PartUsage(Base, UUIDMixin, TimestampMixin):
     # Relationships
     job = relationship("Job", backref="parts_used")
     part = relationship("Part")
-
-from datetime import datetime

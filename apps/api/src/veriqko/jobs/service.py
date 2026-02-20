@@ -10,6 +10,7 @@ from sqlalchemy import select, or_, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from veriqko.devices.models import Device
 from veriqko.jobs.models import Job, JobHistory, JobStatus
 from veriqko.jobs.schemas import JobCreate, JobUpdate
 from veriqko.jobs.state_machine import JobStateMachine, TransitionResult
@@ -26,7 +27,8 @@ class JobRepository:
         stmt = (
             select(Job)
             .options(
-                selectinload(Job.device),
+                selectinload(Job.device).selectinload(Device.brand),
+                selectinload(Job.device).selectinload(Device.gadget_type),
                 selectinload(Job.assigned_technician),
                 selectinload(Job.current_station),
                 selectinload(Job.qc_technician),
@@ -74,11 +76,21 @@ class JobRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
+    async def _get_next_ticket_id(self) -> int:
+        """Get the next sequential ticket ID."""
+        from sqlalchemy import func
+        stmt = select(func.max(Job.ticket_id))
+        max_id = await self.db.scalar(stmt)
+        return (max_id or 10000) + 1
+
     async def create(self, data: JobCreate, user_id: str) -> Job:
         """Create a new job."""
         now = datetime.now(timezone.utc)
+        ticket_id = await self._get_next_ticket_id()
+        from datetime import timedelta
         job = Job(
             id=str(uuid4()),
+            ticket_id=ticket_id,
             device_id=data.device_id,
             serial_number=data.serial_number,
             imei=data.imei,
@@ -88,6 +100,7 @@ class JobRepository:
             status=JobStatus.INTAKE,
             assigned_technician_id=user_id,
             intake_started_at=now,
+            sla_due_at=now + timedelta(hours=24), # Default 24h SLA
         )
         self.db.add(job)
         await self.db.flush()
@@ -110,14 +123,16 @@ class JobRepository:
     async def create_batch(self, data: JobBatchCreate, user_id: str) -> list[Job]:
         """Create multiple jobs."""
         now = datetime.now(timezone.utc)
+        start_ticket_id = await self._get_next_ticket_id()
         jobs = []
         
         common = data.common_data or {}
         device_id = common.get("device_id")
         
-        for sn in data.serial_numbers:
+        for i, sn in enumerate(data.serial_numbers):
             job = Job(
                 id=str(uuid4()),
+                ticket_id=start_ticket_id + i,
                 device_id=device_id,
                 serial_number=sn,
                 imei=common.get("imei"),

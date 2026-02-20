@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
-from veriqko.db.base import Base, get_session
+from veriqko.db.base import Base, get_db
 from veriqko.main import app
 from veriqko.config import get_settings
 
@@ -54,11 +54,11 @@ async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, 
     Fixture for creating an HTTP client for testing the FastAPI application.
     """
     
-    # Override the get_session dependency
-    async def override_get_session():
+    # Override the get_db dependency
+    async def override_get_db():
         yield db_session
 
-    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_db] = override_get_db
     
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

@@ -9,11 +9,15 @@ class PiceaClient:
         self.url = settings.picea_api_url
         self.api_key = settings.picea_api_key
         self.customer_id = settings.picea_customer_id
-        self.client = httpx.AsyncClient(
-            base_url=self.url,
-            headers={"X-API-KEY": self.api_key} if self.api_key else {},
-            timeout=30.0
-        )
+        
+        client_kwargs = {
+            "timeout": 30.0,
+            "headers": {"X-API-KEY": self.api_key} if self.api_key else {}
+        }
+        if self.url:
+            client_kwargs["base_url"] = self.url
+            
+        self.client = httpx.AsyncClient(**client_kwargs)
 
     async def get_test_results(self, serial_number: str, imei: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """

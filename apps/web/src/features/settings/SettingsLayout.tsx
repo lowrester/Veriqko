@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Printer, FileText, Users, Monitor, Network, Server } from 'lucide-react';
+import { Printer, FileText, Users, Monitor, Network, Server, Package } from 'lucide-react';
 
 export const SettingsLayout: React.FC = () => {
     const navItems = [
         { to: '/settings/features', label: 'Platform Features', icon: <Monitor className="w-4 h-4" /> },
         { to: '/settings/system', label: 'System', icon: <Server className="w-4 h-4" /> },
+        { to: '/settings/inventory', label: 'Inventory', icon: <Package className="w-4 h-4" /> },
         { to: '/settings/printers', label: 'Printers', icon: <Printer className="w-4 h-4" /> },
         { to: '/settings/labels', label: 'Label Layouts', icon: <FileText className="w-4 h-4" /> },
         { to: '/settings/integrations', label: 'Integrations', icon: <Network className="w-4 h-4" /> },

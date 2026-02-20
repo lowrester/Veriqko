@@ -36,23 +36,24 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-secondary px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm">
         <div className="card">
-          <div className="text-center mb-8 flex flex-col items-center">
-            <img src={logo} alt="Veriqko" className="h-12 w-auto mb-2" />
-            <h1 className="text-2xl font-bold">Veriqko</h1>
+          <div className="text-center mb-6 flex flex-col items-center">
+            <img src={logo} alt="Veriqko" className="h-10 w-auto mb-2" />
+            <h1 className="text-xl font-bold">Veriqko</h1>
+            <p className="text-xs text-text-secondary mt-0.5">Console Verification Platform</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {error && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+              <div className="flex items-center gap-2 p-2.5 text-xs text-red-600 bg-red-50 rounded-lg">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="field-label">
                 Email
               </label>
               <input
@@ -60,7 +61,8 @@ export function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                onFocus={(e) => e.target.select()}
+                className="input h-9"
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
@@ -68,7 +70,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="field-label">
                 Password
               </label>
               <input
@@ -76,7 +78,8 @@ export function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input"
+                onFocus={(e) => e.target.select()}
+                className="input h-9"
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
@@ -86,12 +89,12 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="btn-primary w-full h-9 flex items-center justify-center gap-2 mt-1"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Logging in...
+                  Logging in…
                 </>
               ) : (
                 'Log In'

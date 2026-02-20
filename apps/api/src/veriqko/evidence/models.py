@@ -3,8 +3,8 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text, JSON, UUID
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from veriqko.db.base import Base, UUIDMixin
 from veriqko.jobs.models import JobStatus
@@ -69,7 +69,7 @@ class Evidence(Base, UUIDMixin):
 
     # Optional metadata
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
-    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Created timestamp (evidence is immutable)
     created_at: Mapped[datetime] = mapped_column(

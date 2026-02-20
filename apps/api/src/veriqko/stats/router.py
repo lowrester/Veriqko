@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from veriqko.db.base import get_db
 from veriqko.dependencies import get_current_user
+from sqlalchemy.orm import selectinload
 from veriqko.jobs.models import Job, JobStatus, TestResult, TestResultStatus, TestStep
 from veriqko.devices.models import Device
 from veriqko.users.models import User
@@ -45,7 +46,16 @@ async def get_dashboard_stats(
         yield_rate = (stats.completed / total_closed) * 100
         
     # Get recent jobs (limit 5)
-    recent_query = select(Job).where(Job.deleted_at.is_(None)).order_by(Job.created_at.desc()).limit(5)
+    recent_query = (
+        select(Job)
+        .options(
+            selectinload(Job.device).selectinload(Device.brand),
+            selectinload(Job.device).selectinload(Device.gadget_type)
+        )
+        .where(Job.deleted_at.is_(None))
+        .order_by(Job.created_at.desc())
+        .limit(5)
+    )
     recent_result = await session.execute(recent_query)
     recent_jobs = recent_result.scalars().all()
     
@@ -64,13 +74,34 @@ async def get_dashboard_stats(
                 "id": str(job.id),
                 "serial_number": job.serial_number,
                 "status": job.status,
-                "brand": job.device.brand if job.device else "Unknown",
-                "device_type": job.device.device_type if job.device else "Unknown",
+                "brand": job.device.brand.name if job.device and job.device.brand else "Unknown",
+                "device_type": job.device.gadget_type.name if job.device and job.device.gadget_type else "Unknown",
                 "model": job.device.model if job.device else "Unknown",
-                "updated_at": job.updated_at
+                "updated_at": job.updated_at,
+                "sla_status": _get_sla_status(job.sla_due_at)
             } for job in recent_jobs
         ]
     }
+
+def _get_sla_status(due_at: datetime | None) -> str:
+    if not due_at:
+        return "none"
+        
+    now = datetime.now(timezone.utc)
+    
+    # Ensure due_at is timezone-aware if it's not
+    if due_at.tzinfo is None:
+        due_at = due_at.replace(tzinfo=timezone.utc)
+        
+    diff = due_at - now
+    hours = diff.total_seconds() / 3600
+    
+    if hours < 0:
+        return "critical" # Overdue
+    if hours < 4:
+        return "warning" # Less than 4h
+    return "healthy"
+
 
 from sqlalchemy.orm import selectinload
 from veriqko.stations.models import Station
@@ -91,7 +122,8 @@ async def get_floor_status(
     # Fetch all active jobs with device details
     # We fetch them effectively properly instead of relying on intricate relationship loading filtering
     jobs_query = select(Job).options(
-        selectinload(Job.device)
+        selectinload(Job.device).selectinload(Device.brand),
+        selectinload(Job.device).selectinload(Device.gadget_type)
     ).where(
         and_(
             Job.status.notin_([JobStatus.COMPLETED, JobStatus.FAILED]),
@@ -112,8 +144,8 @@ async def get_floor_status(
             "id": str(job.id),
             "serial_number": job.serial_number,
             "status": job.status,
-            "brand": job.device.brand if job.device else "Unknown",
-            "device_type": job.device.device_type if job.device else "Unknown",
+            "brand": job.device.brand.name if job.device and job.device.brand else "Unknown",
+            "device_type": job.device.gadget_type.name if job.device and job.device.gadget_type else "Unknown",
             "model": job.device.model if job.device else "Unknown",
             "updated_at": job.updated_at,
             "batches": job.batch_id

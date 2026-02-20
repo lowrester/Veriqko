@@ -4,51 +4,58 @@
 
 @layer base {
   :root {
-    /* Base Colors - Slate 50-900 */
+    /* Base Colors - Slate 50-900 (Refined for 'Light' feel) */
     --color-bg-primary: 255 255 255;
-    --color-bg-secondary: 248 250 252;
-    --color-text-primary: 15 23 42;
+    --color-bg-secondary: 251 252 254;
+    /* Ligtened from 248 250 252 */
+    --color-text-primary: 30 41 59;
+    /* Softer Slate 800 */
     --color-text-secondary: 100 116 139;
-    --color-border: 226 232 240;
+    --color-border: 241 245 249;
+    /* Softer Slate 100 */
 
-    /* Default Brand - Blue */
-    --brand-primary: 37 99 235;
-    --brand-secondary: 30 64 175;
-    --brand-light: 219 234 254;
+    /* Default Brand - Modern Blue */
+    --brand-primary: 59 130 246;
+    /* Blue 500 */
+    --brand-secondary: 37 99 235;
+    /* Blue 600 */
+    --brand-light: 239 246 255;
+    /* Blue 50 */
   }
 
   /* Dark Mode Overrides */
   .dark {
     --color-bg-primary: 15 23 42;
-    --color-bg-secondary: 30 41 59;
+    --color-bg-secondary: 22 30 48;
     --color-text-primary: 248 250 252;
     --color-text-secondary: 148 163 184;
-    --color-border: 51 65 85;
+    --color-border: 30 41 59;
   }
 
   /* Color Schemes */
   body[data-color-scheme='purple'] {
-    --brand-primary: 147 51 234;
-    --brand-secondary: 107 33 168;
-    --brand-light: 243 232 255;
+    --brand-primary: 168 85 247;
+    --brand-secondary: 147 51 234;
+    --brand-light: 250 245 255;
   }
 
   body[data-color-scheme='green'] {
-    --brand-primary: 22 163 74;
-    --brand-secondary: 21 128 61;
-    --brand-light: 220 252 231;
+    --brand-primary: 34 197 94;
+    --brand-secondary: 22 163 74;
+    --brand-light: 240 253 244;
   }
 
   body[data-color-scheme='orange'] {
-    --brand-primary: 234 88 12;
-    --brand-secondary: 194 65 12;
-    --brand-light: 255 237 213;
+    --brand-primary: 249 115 22;
+    --brand-secondary: 234 88 12;
+    --brand-light: 255 247 237;
   }
 }
 
 body {
-  @apply bg-gray-50 text-gray-900;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  @apply bg-bg-secondary text-text-primary;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -56,35 +63,39 @@ body {
 /* Tablet-first touch targets */
 @layer components {
   .btn {
-    @apply min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg font-medium transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply min-h-[38px] min-w-[38px] px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 hover:shadow-sm active:scale-[0.98] text-sm;
   }
 
   .btn-primary {
-    @apply btn bg-brand-primary text-white hover:bg-brand-secondary focus:ring-brand-light;
+    @apply btn bg-brand-primary text-white hover:bg-brand-secondary focus:ring-brand-light shadow-md hover:shadow-lg;
   }
 
   .btn-secondary {
-    @apply btn bg-bg-secondary text-text-primary hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-500 border border-border;
+    @apply btn bg-bg-primary text-text-primary hover:bg-bg-secondary focus:ring-gray-200 border border-border;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-red-500 text-white hover:bg-red-600 focus:ring-red-100;
   }
 
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply btn bg-green-500 text-white hover:bg-green-600 focus:ring-green-100;
   }
 
   .input {
-    @apply min-h-[44px] w-full px-3 py-2 bg-bg-primary text-text-primary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent placeholder:text-text-secondary;
+    @apply min-h-[40px] w-full px-3 py-1.5 bg-bg-primary text-text-primary border border-border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-brand-primary placeholder:text-text-secondary/50 text-sm;
   }
 
   .card {
-    @apply bg-bg-primary text-text-primary rounded-xl shadow-sm border border-border p-4;
+    @apply bg-bg-primary text-text-primary rounded-xl shadow-sm border border-border/50 p-4;
   }
 
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .field-label {
+    @apply text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1 block;
   }
 
   /* Status Badges - Keep specific colors for status but adapt backgrounds */

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ReportCreate(BaseModel):
@@ -27,8 +27,7 @@ class ReportResponse(BaseModel):
     generated_at: datetime
     version: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReportListResponse(BaseModel):
@@ -41,8 +40,7 @@ class ReportListResponse(BaseModel):
     generated_at: datetime
     public_url: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PublicReportResponse(BaseModel):

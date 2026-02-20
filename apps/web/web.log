@@ -1,0 +1,22 @@
+
+> veriqko-web@0.1.0 dev
+> vite --host 0.0.0.0 --port 3000
+
+
+  VITE v5.4.21  ready in 411 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://172.20.10.2:3000/
+  ➜  Network: http://192.168.20.249:3000/
+4:09:31 PM [vite] hmr update /src/index.css
+4:10:07 PM [vite] hmr update /src/features/dashboard/DashboardPage.tsx, /src/index.css
+4:10:28 PM [vite] hmr update /src/components/layout/AppShell.tsx, /src/index.css
+4:25:20 PM [vite] hmr update /src/features/settings/SettingsLayout.tsx, /src/index.css
+4:25:59 PM [vite] hmr update /src/App.tsx, /src/index.css
+4:27:11 PM [vite] hmr update /src/features/intake/IntakeNewPage.tsx, /src/index.css
+4:27:34 PM [vite] hmr update /src/index.css
+4:28:01 PM [vite] hmr update /src/features/intake/IntakeNewPage.tsx, /src/index.css
+4:37:26 PM [vite] hmr update /src/features/auth/LoginPage.tsx, /src/index.css
+4:44:33 PM [vite] hmr update /src/features/intake/IntakeNewPage.tsx, /src/index.css
+4:46:16 PM [vite] hmr update /src/features/intake/IntakeNewPage.tsx, /src/index.css
+4:53:09 PM [vite] hmr update /src/features/intake/IntakeNewPage.tsx, /src/index.css

@@ -27,7 +27,7 @@ class AuthService:
         if user is None:
             return None
 
-        if not verify_password(password, user.password_hash):
+        if not verify_password(password, user.hashed_password):
             return None
 
         return user

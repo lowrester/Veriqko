@@ -33,6 +33,7 @@ def _job_to_response(job) -> JobResponse:
     """Convert job model to response schema."""
     return JobResponse(
         id=job.id,
+        ticket_id=job.ticket_id,
         serial_number=job.serial_number,
         imei=job.imei,
         status=job.status.value,

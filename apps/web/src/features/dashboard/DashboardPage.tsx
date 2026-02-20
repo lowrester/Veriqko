@@ -15,7 +15,8 @@ import {
   TrendingUp,
   RotateCw,
   LayoutDashboard,
-  BarChart
+  BarChart,
+  Smartphone
 } from 'lucide-react'
 
 export function DashboardPage() {
@@ -34,14 +35,14 @@ export function DashboardPage() {
   const recentJobs = dashboardData?.recent_activity || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome & Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">
+          <h1 className="text-xl font-bold text-text-primary">
             Welcome, {user?.full_name}
           </h1>
-          <p className="text-text-secondary">Here is your overview for today.</p>
+          <p className="text-sm text-text-secondary">Here is your overview for today.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex bg-bg-secondary p-1 rounded-lg">
@@ -116,8 +117,8 @@ export function DashboardPage() {
 
           {/* Quick actions */}
           <div className="card">
-            <h2 className="font-semibold text-text-primary mb-4">Quick Actions</h2>
-            <div className="flex flex-wrap gap-3">
+            <h2 className="text-sm font-semibold text-text-primary mb-3">Quick Actions</h2>
+            <div className="flex flex-wrap gap-2">
               <Link to="/jobs/new" className="btn-primary flex items-center gap-2">
                 <Plus className="w-4 h-4" />
                 New Job
@@ -131,8 +132,8 @@ export function DashboardPage() {
 
           {/* Recent Activity */}
           <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-text-primary">Recent Activity</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-text-primary">Recent Activity</h2>
               <Link
                 to="/jobs"
                 className="text-sm text-blue-600 hover:text-blue-700"
@@ -163,28 +164,39 @@ export function DashboardPage() {
                   <Link
                     key={job.id}
                     to={`/job/${job.id}/run`}
-                    className="flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-bg-secondary transition-colors"
+                    className="flex items-center justify-between p-3 -mx-2 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 group border border-transparent hover:border-border"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-                        <Clock className="w-4 h-4 text-gray-500" />
+                      <div className="w-10 h-10 bg-bg-secondary rounded-lg flex items-center justify-center group-hover:bg-brand-light transition-colors">
+                        <Smartphone className="w-5 h-5 text-slate-400 group-hover:text-brand-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-text-primary">
+                        <p className="text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors">
                           {job.serial_number}
                         </p>
-                        <p className="text-sm text-text-secondary">
+                        <p className="text-xs font-medium text-slate-500">
                           {job.brand} {job.model}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`badge-${job.status}`}>
+                    <div className="flex items-center gap-4">
+                      {job.sla_status && job.sla_status !== 'none' && (
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border tracking-tighter ${job.sla_status === 'critical'
+                          ? 'bg-red-50 text-red-600 border-red-100 animate-pulse'
+                          : job.sla_status === 'warning'
+                            ? 'bg-amber-50 text-amber-600 border-amber-100'
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          }`}>
+                          SLA
+                        </span>
+                      )}
+                      <span className={`badge-${job.status} px-3 py-1 text-[11px] font-bold uppercase tracking-wider`}>
                         {STATUS_LABELS[job.status as keyof typeof STATUS_LABELS] || job.status}
                       </span>
-                      <span className="text-sm text-gray-500 hidden sm:block">
+                      <span className="text-xs font-medium text-slate-400 hidden sm:block">
                         {formatDate(job.updated_at)}
                       </span>
+                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-primary group-hover:translate-x-1 transition-all" />
                     </div>
                   </Link>
                 ))}
@@ -218,14 +230,14 @@ function StatCard({
   }
 
   return (
-    <div className="card">
+    <div className="card hover:shadow-md transition-all duration-300 border-none bg-white/60 backdrop-blur-sm p-3">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+        <div className={`p-2 rounded-lg ${colorClasses[color]} shadow-sm`}>
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-text-primary">{value}</p>
-          <p className="text-sm text-text-secondary">{label}</p>
+          <p className="text-xl font-extrabold tracking-tight text-slate-900">{value}</p>
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
         </div>
       </div>
     </div>

@@ -58,17 +58,17 @@ class ReportData:
     passed_tests: int
     failed_tests: int
 
-    # Picea Integration
-    picea_erase_confirmed: bool = False
-    picea_erase_certificate: Optional[str] = None
-    picea_verify_status: Optional[str] = None
-    picea_mdm_locked: bool = False
-
     # Report metadata
     scope: str
     variant: str
     access_token: str
     public_url: str
+
+    # Picea Integration
+    picea_erase_confirmed: bool = False
+    picea_erase_certificate: Optional[str] = None
+    picea_verify_status: Optional[str] = None
+    picea_mdm_locked: bool = False
 
 
 @dataclass

@@ -53,25 +53,25 @@ export function AppShell() {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 z-50 h-full w-64 bg-bg-primary border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed top-0 left-0 z-50 h-full w-[240px] bg-bg-primary border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+                    <div className="flex items-center justify-between h-14 px-4 border-b border-border">
                         <Link to="/" className="flex items-center">
-                            <img src={logo} alt="Veriqko" className="h-8 w-auto" />
+                            <img src={logo} alt="Veriqko" className="h-7 w-auto" />
                         </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="lg:hidden p-2 rounded-md hover:bg-bg-secondary"
                         >
-                            <X className="w-5 h-5 text-text-secondary" />
+                            <X className="w-4 h-4 text-text-secondary" />
                         </button>
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                    <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
                         {visibleNavItems.map((item) => {
                             const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP]
                             const isActive =
@@ -83,12 +83,12 @@ export function AppShell() {
                                     key={item.path}
                                     to={item.path}
                                     onClick={() => setSidebarOpen(false)}
-                                    className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
+                                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                                         ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
                                         : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
                                         }`}
                                 >
-                                    {Icon && <Icon className="w-5 h-5" />}
+                                    {Icon && <Icon className="w-4 h-4" />}
                                     {item.label}
                                 </Link>
                             )
@@ -121,15 +121,15 @@ export function AppShell() {
             </aside>
 
             {/* Main content */}
-            <div className="lg:pl-64">
+            <div className="lg:pl-[240px]">
                 {/* Top bar */}
-                <header className="sticky top-0 z-30 h-16 bg-bg-primary border-b border-border">
+                <header className="sticky top-0 z-30 h-14 bg-bg-primary border-b border-border">
                     <div className="flex items-center justify-between h-full px-4">
                         <button
                             onClick={() => setSidebarOpen(true)}
                             className="lg:hidden p-2 rounded-md hover:bg-bg-secondary"
                         >
-                            <Menu className="w-6 h-6 text-text-secondary" />
+                            <Menu className="w-5 h-5 text-text-secondary" />
                         </button>
 
                         <div className="flex-1" />
@@ -140,7 +140,7 @@ export function AppShell() {
                 </header>
 
                 {/* Page content */}
-                <main className="p-6">
+                <main className="p-4">
                     <Outlet />
                 </main>
             </div>

@@ -18,6 +18,7 @@ export interface DashboardStats {
         device_type: string;
         model: string;
         updated_at: string;
+        sla_status?: 'healthy' | 'warning' | 'critical' | 'none';
     }>;
 }
 

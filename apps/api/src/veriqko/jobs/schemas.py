@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class JobCreate(BaseModel):
@@ -11,10 +11,26 @@ class JobCreate(BaseModel):
 
     device_id: Optional[str] = None
     serial_number: str = Field(..., min_length=1, max_length=100)
-    imei: Optional[str] = Field(None, min_length=1, max_length=100)
+    imei: Optional[str] = Field(None, max_length=100)
     customer_reference: Optional[str] = None
     batch_id: Optional[str] = None
+    condition_notes: Optional[str] = None
     intake_condition: Optional[dict] = None
+    brand: Optional[str] = None
+    device_type: Optional[str] = None
+    model: Optional[str] = None
+    model_number: Optional[str] = None
+    colour: Optional[str] = None
+    storage: Optional[str] = None
+
+    @field_validator('imei', 'customer_reference', 'batch_id', 'condition_notes',
+                     'brand', 'device_type', 'model', 'model_number', 'colour', 'storage',
+                     mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v: object) -> object:
+        if isinstance(v, str) and v.strip() == '':
+            return None
+        return v
 
 
 class JobBatchCreate(BaseModel):
@@ -89,6 +105,7 @@ class JobResponse(BaseModel):
     """Job response schema."""
 
     id: str
+    ticket_id: Optional[int] = None
     serial_number: str
     status: str
     device: Optional[DeviceSummary] = None

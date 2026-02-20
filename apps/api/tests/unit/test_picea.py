@@ -31,7 +31,8 @@ async def test_picea_client_get_results_success(mock_settings):
 @pytest.mark.asyncio
 async def test_picea_service_sync_mapping(mock_settings):
     session = AsyncMock()
-    service = PiceaService(session)
+    with patch("veriqko.integrations.picea.service.get_settings", return_value=mock_settings):
+        service = PiceaService(session)
     
     # Mock data
     job = Job(id="j1", serial_number="SN1", device_id="d1")

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from typing import List
 
 from veriqko.db.base import get_db
@@ -82,6 +83,6 @@ async def get_job_parts(job_id: str, db: AsyncSession = Depends(get_db)):
         select(PartUsage)
         .where(PartUsage.job_id == job_id)
         .order_by(PartUsage.created_at)
-        .options(select(PartUsage).joinedload(PartUsage.part))
+        .options(joinedload(PartUsage.part))
     )
     return result.scalars().all()

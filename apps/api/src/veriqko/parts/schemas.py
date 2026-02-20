@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -20,8 +20,7 @@ class PartResponse(PartBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PartUsageCreate(BaseModel):
     part_id: str
@@ -36,5 +35,4 @@ class PartUsageResponse(BaseModel):
     created_at: datetime
     part: PartResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

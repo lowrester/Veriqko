@@ -25,6 +25,7 @@ import { PrintersPage } from '@/features/settings/PrintersPage'
 import { LabelLayoutsPage } from '@/features/settings/LabelLayoutsPage'
 import { IntegrationsPage } from '@/features/settings/IntegrationsPage'
 import { FeaturesPage } from '@/features/settings/FeaturesPage'
+import { InventorySettings } from '@/features/settings/InventorySettings'
 import { CustomerDashboard } from '@/features/portal/CustomerDashboard'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -138,6 +139,7 @@ function App() {
             <Route path="labels" element={<LabelLayoutsPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
             <Route path="system" element={<SystemPage />} />
+            <Route path="inventory" element={<InventorySettings />} />
 
             {/* Alias existing admin pages into settings for better UX */}
             {/* Configuration Pages */}

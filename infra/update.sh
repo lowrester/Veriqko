@@ -377,7 +377,7 @@ log "Waiting for API to come up..."
 HEALTH_OK=false
 for i in $(seq 1 10); do
     sleep 3
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health 2>/dev/null || echo "000")
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://192.168.20.120/health 2>/dev/null || echo "000")
     if [ "$HTTP_STATUS" = "200" ]; then
         HEALTH_OK=true
         break

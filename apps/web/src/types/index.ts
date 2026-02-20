@@ -8,6 +8,7 @@ export type JobStatus =
   | 'on_hold'
 
 export type UserRole = 'admin' | 'supervisor' | 'technician' | 'viewer' | 'customer'
+export type SLAStatus = 'healthy' | 'warning' | 'critical' | 'none'
 
 export interface User {
   id: string
