@@ -78,6 +78,11 @@ log "Domain: $VERIQKO_DOMAIN"
 # System Packages
 #===============================================================================
 
+log "Waiting for apt locks to be released (unattended-upgrades may be running)..."
+while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+    sleep 5
+done
+
 log "Updating system packages..."
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq

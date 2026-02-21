@@ -307,6 +307,7 @@ log "Using IP: $VM_IP"
 log "Waiting for SSH to become available..."
 for i in $(seq 1 24); do
     if ssh -o StrictHostKeyChecking=no \
+           -o UserKnownHostsFile=/dev/null \
            -o ConnectTimeout=5 \
            -o BatchMode=yes \
            -i "$PROXMOX_SSH_KEY" \
@@ -324,6 +325,7 @@ done
 
 vm_ssh() {
     ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
         -o ConnectTimeout=30 \
         -o ServerAliveInterval=10 \
         -i "$PROXMOX_SSH_KEY" \
