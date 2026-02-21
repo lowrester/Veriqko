@@ -74,21 +74,19 @@ CREDENTIALS_FILE="/root/veriqko-credentials.txt"
 log "Starting Veriqko OS provisioning..."
 log "Domain: $VERIQKO_DOMAIN"
 
-#===============================================================================
-# System Packages
-#===============================================================================
+# fuser is not installed by default on Ubuntu AMIs, so it fails silently.
+# Instead, we stop unattended-upgrades and use native apt timeout options.
+log \"Disabling background apt processes during provisioning...\"
+systemctl stop apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+systemctl stop apt-daily.service apt-daily-upgrade.service unattended-upgrades.service 2>/dev/null || true
+killall apt apt-get 2>/dev/null || true
 
-log "Waiting for apt locks to be released (unattended-upgrades may be running)..."
-while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
-    sleep 5
-done
+log \"Updating system packages...\"
+apt-get -o DPkg::Lock::Timeout=600 update -qq
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 upgrade -y -qq
 
-log "Updating system packages..."
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
-
-log "Installing base dependencies..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
+log \"Installing base dependencies...\"
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y \\
     curl \
     wget \
     git \
