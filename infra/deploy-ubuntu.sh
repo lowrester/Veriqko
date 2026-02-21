@@ -86,7 +86,7 @@ apt-get -o DPkg::Lock::Timeout=600 update -qq
 DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 upgrade -y -qq
 
 log \"Installing base dependencies...\"
-DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y \\
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y \
     curl \
     wget \
     git \
