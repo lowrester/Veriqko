@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 import veriqko.models  # noqa: F401
 from veriqko.config import get_settings
 from veriqko.errors.exceptions import VeriqkoError
+from veriqko.logging import logging_middleware, setup_logging
 
 
 @asynccontextmanager
@@ -49,6 +50,9 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
+    
+    # Initialize structured logging
+    setup_logging(json_format=not settings.debug, log_level=settings.log_level)
 
     app = FastAPI(
         title="Veriqko API",
@@ -79,6 +83,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Logging Middleware
+    app.middleware("http")(logging_middleware)
 
     # Include routers
     from veriqko.auth.router import router as auth_router

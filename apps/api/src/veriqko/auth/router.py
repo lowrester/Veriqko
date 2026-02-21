@@ -9,11 +9,15 @@ from veriqko.auth.jwt import create_access_token, verify_token
 from veriqko.auth.schemas import (
     LoginRequest,
     LoginResponse,
+    MFALoginRequest,
+    MFASetupResponse,
+    MFAVerifyRequest,
     RefreshRequest,
     RefreshResponse,
     UserResponse,
 )
 from veriqko.auth.service import AuthService
+from veriqko.auth.mfa import generate_mfa_secret, get_mfa_uri, verify_mfa_code
 from veriqko.config import get_settings
 from veriqko.db.base import get_db
 from veriqko.dependencies import get_current_user
@@ -38,6 +42,13 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if user.mfa_enabled:
+        from veriqko.auth.jwt import create_mfa_token
+        return LoginResponse(
+            mfa_required=True,
+            mfa_token=create_mfa_token(user.id),
+        )
+
     tokens = auth_service.create_tokens(user)
 
     return LoginResponse(
@@ -46,6 +57,72 @@ async def login(
         token_type=tokens.token_type,
         expires_in=tokens.expires_in,
     )
+
+@router.post("/login/mfa", response_model=LoginResponse)
+async def login_mfa(
+    request: MFALoginRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Verify MFA token and TOTP code to complete login."""
+    payload = verify_token(request.mfa_token, token_type="mfa_temp")
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired MFA token")
+        
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_id(payload.sub)
+    
+    if user is None or not user.is_active or not user.mfa_enabled or not user.mfa_secret:
+        raise HTTPException(status_code=401, detail="Invalid user state for MFA")
+        
+    if not verify_mfa_code(user.mfa_secret, request.code):
+        raise HTTPException(status_code=401, detail="Invalid TOTP code")
+        
+    tokens = auth_service.create_tokens(user)
+
+    return LoginResponse(
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
+        token_type=tokens.token_type,
+        expires_in=tokens.expires_in,
+    )
+
+@router.post("/mfa/setup", response_model=MFASetupResponse)
+async def setup_mfa(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Generate MFA secret and provisioning URI."""
+    if current_user.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is already enabled")
+        
+    secret = generate_mfa_secret()
+    current_user.mfa_secret = secret
+    await db.commit()
+    
+    uri = get_mfa_uri(current_user, secret)
+    return MFASetupResponse(secret=secret, uri=uri)
+
+@router.post("/mfa/verify", response_model=UserResponse)
+async def verify_mfa_setup(
+    request: MFAVerifyRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Verify TOTP code and enable MFA."""
+    if current_user.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is already enabled")
+        
+    if not current_user.mfa_secret:
+        raise HTTPException(status_code=400, detail="MFA setup not initiated")
+        
+    if not verify_mfa_code(current_user.mfa_secret, request.code):
+        raise HTTPException(status_code=400, detail="Invalid TOTP code")
+        
+    current_user.mfa_enabled = True
+    await db.commit()
+    await db.refresh(current_user)
+    
+    return UserResponse.model_validate(current_user)
 
 
 @router.post("/refresh", response_model=RefreshResponse)

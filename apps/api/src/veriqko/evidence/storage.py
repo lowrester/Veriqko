@@ -89,8 +89,8 @@ class AzureBlobStorage(Storage):
             raise ValueError("Azure connection string is required")
 
         # Lazy import to avoid dependency issues if not using Azure
-        from azure.storage.blob import BlobServiceClient
-        self.client = BlobServiceClient.from_connection_string(config.azure_connection_string)
+        from azure.storage.blob.aio import BlobServiceClient
+        self.BlobServiceClient = BlobServiceClient
         self.container_name = config.azure_container_name
 
     async def save(
@@ -125,11 +125,12 @@ class AzureBlobStorage(Storage):
             raise ValueError(f"File exceeds maximum size of {self.config.max_file_size_mb}MB")
 
         # Upload to Azure
-        container_client = self.client.get_container_client(self.container_name)
-        blob_client = container_client.get_blob_client(blob_path)
+        async with self.BlobServiceClient.from_connection_string(self.config.azure_connection_string) as client:
+            container_client = client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(blob_path)
 
-        # Simple upload for now, could be optimized for large files
-        blob_client.upload_blob(content, overwrite=True, content_settings={"content_type": mime_type})
+            # Simple upload for now, could be optimized for large files
+            await blob_client.upload_blob(content, overwrite=True, content_settings={"content_type": mime_type})
 
         return StoredFile(
             stored_filename=stored_filename,
@@ -141,22 +142,26 @@ class AzureBlobStorage(Storage):
         )
 
     async def get_path(self, relative_path: str) -> str:
-        container_client = self.client.get_container_client(self.container_name)
-        blob_client = container_client.get_blob_client(relative_path)
-        return blob_client.url
+        async with self.BlobServiceClient.from_connection_string(self.config.azure_connection_string) as client:
+            container_client = client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(relative_path)
+            # URL property is available synchronously
+            return blob_client.url
 
     async def exists(self, relative_path: str) -> bool:
-        container_client = self.client.get_container_client(self.container_name)
-        blob_client = container_client.get_blob_client(relative_path)
-        return blob_client.exists()
+        async with self.BlobServiceClient.from_connection_string(self.config.azure_connection_string) as client:
+            container_client = client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(relative_path)
+            return await blob_client.exists()
 
     async def delete(self, relative_path: str) -> bool:
-        container_client = self.client.get_container_client(self.container_name)
-        blob_client = container_client.get_blob_client(relative_path)
-        if blob_client.exists():
-            blob_client.delete_blob()
-            return True
-        return False
+        async with self.BlobServiceClient.from_connection_string(self.config.azure_connection_string) as client:
+            container_client = client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(relative_path)
+            if await blob_client.exists():
+                await blob_client.delete_blob()
+                return True
+            return False
 
     def _sanitize_filename(self, filename: str) -> str:
         safe = re.sub(r"[^\w\-.]", "_", filename)

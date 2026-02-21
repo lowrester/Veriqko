@@ -13,10 +13,32 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """Login response schema."""
 
-    access_token: str
-    refresh_token: str
+    access_token: str | None = None
+    refresh_token: str | None = None
     token_type: str = "bearer"
-    expires_in: int
+    expires_in: int | None = None
+    mfa_required: bool = False
+    mfa_token: str | None = None
+
+
+class MFASetupResponse(BaseModel):
+    """MFA setup response schema."""
+
+    secret: str
+    uri: str
+
+
+class MFAVerifyRequest(BaseModel):
+    """MFA verify request schema."""
+
+    code: str
+
+
+class MFALoginRequest(BaseModel):
+    """MFA login request schema."""
+
+    mfa_token: str
+    code: str
 
 
 class RefreshRequest(BaseModel):

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +68,7 @@ async def list_reports(
 async def create_report(
     job_id: str,
     data: ReportCreate,
+    background_tasks: BackgroundTasks,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
@@ -159,37 +160,6 @@ async def create_report(
         picea_mdm_locked=job.picea_mdm_locked,
     )
 
-    # Generate PDF
-    generator = get_report_generator()
-    now = datetime.now(UTC)
-
-    import tempfile
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-
-    try:
-        await generator.generate(report_data, tmp_path)
-
-        # Save to storage
-        from veriqko.evidence.storage import get_storage
-
-        storage = get_storage()
-        with open(tmp_path, "rb") as f:
-            stored = await storage.save(
-                file=f,
-                job_id=job_id,
-                filename=f"report_{job.serial_number}_{scope.value}.pdf",
-                mime_type="application/pdf",
-                folder="reports",
-            )
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-
-    # Calculate expiration
-    expires_at = now + timedelta(days=settings.report_expiry_days)
-
     # Get version
     version_stmt = select(Report).where(
         Report.job_id == job_id,
@@ -200,14 +170,14 @@ async def create_report(
     existing_reports = version_result.scalars().all()
     version = len(existing_reports) + 1
 
+    report_id = str(uuid4())
+
     # Create report record
     report = Report(
-        id=str(uuid4()),
+        id=report_id,
         job_id=job_id,
         scope=scope,
         variant=variant,
-        file_path=stored.relative_path,
-        file_size_bytes=stored.size_bytes,
         access_token=access_token,
         expires_at=expires_at,
         generated_at=now,
@@ -218,12 +188,23 @@ async def create_report(
     db.add(report)
     await db.flush()
 
+    # Enqueue background task
+    from veriqko.reports.tasks import generate_and_save_report
+    background_tasks.add_task(
+        generate_and_save_report,
+        report_id=report_id,
+        report_data=report_data,
+        job_id=job_id,
+        serial_number=job.serial_number,
+        scope_value=scope.value,
+    )
+
     return ReportResponse(
         id=report.id,
         job_id=report.job_id,
         scope=report.scope.value,
         variant=report.variant.value,
-        file_size_bytes=report.file_size_bytes,
+        file_size_bytes=0, # Will be updated via background task
         access_token=report.access_token,
         public_url=public_url,
         expires_at=report.expires_at,

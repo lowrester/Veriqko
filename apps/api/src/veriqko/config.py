@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     picea_api_key: str | None = None
     picea_customer_id: str | None = None
 
+    # Miradore MDM Integration
+    miradore_api_key: str | None = None
+    miradore_site_url: str | None = None
+
     # Branding (white-label)
     brand_name: str = "Veriqko"
     brand_logo_path: Path | None = None
@@ -67,6 +71,14 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = Field(default=["http://localhost:3000", "http://localhost:5173"])
+
+    # SMTP Configuration
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_tls: bool = True
 
     # Logging
     log_level: str = "INFO"

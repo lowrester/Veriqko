@@ -19,6 +19,9 @@ export interface DashboardStats {
         model: string;
         updated_at: string;
         sla_status?: 'healthy' | 'warning' | 'critical' | 'none';
+        picea_verify_status?: string;
+        picea_erase_confirmed?: boolean;
+        picea_mdm_locked?: boolean;
     }>;
 }
 

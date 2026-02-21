@@ -64,6 +64,22 @@ def create_refresh_token(user_id: str, email: str, role: str) -> str:
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
+def create_mfa_token(user_id: str) -> str:
+    """Create a temporary token for MFA verification."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=5)  # 5 minutes to complete MFA
+
+    payload = {
+        "sub": user_id,
+        "exp": expire,
+        "iat": now,
+        "type": "mfa_temp",
+    }
+
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
 def create_token_pair(user_id: str, email: str, role: str) -> TokenPair:
     """Create access and refresh token pair."""
     settings = get_settings()

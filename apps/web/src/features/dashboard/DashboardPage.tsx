@@ -190,6 +190,16 @@ export function DashboardPage() {
                           SLA
                         </span>
                       )}
+                      {job.picea_mdm_locked && (
+                        <span className="text-[10px] bg-red-100 text-red-700 font-black px-2 py-0.5 rounded-lg border border-red-200 tracking-tighter animate-pulse">
+                          MDM LOCK
+                        </span>
+                      )}
+                      {(job.status === 'completed' && (!job.picea_verify_status || job.picea_verify_status !== 'SUCCESS' || !job.picea_erase_confirmed)) && (
+                        <span className="text-[10px] bg-orange-100 text-orange-700 font-black px-2 py-0.5 rounded-lg border border-orange-200 tracking-tighter">
+                          BYPASSED
+                        </span>
+                      )}
                       <span className={`badge-${job.status} px-3 py-1 text-[11px] font-bold uppercase tracking-wider`}>
                         {STATUS_LABELS[job.status as keyof typeof STATUS_LABELS] || job.status}
                       </span>

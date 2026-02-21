@@ -6,7 +6,11 @@ from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from veriqko.db.base import get_db
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+
+from veriqko.db.base import get_db, async_session_factory
 from veriqko.dependencies import get_current_user
 from veriqko.devices.models import Device
 from veriqko.jobs.models import Job, JobStatus, TestResult, TestResultStatus, TestStep
@@ -79,7 +83,10 @@ async def get_dashboard_stats(
                 "device_type": job.device.gadget_type.name if job.device and job.device.gadget_type else "Unknown",
                 "model": job.device.model if job.device else "Unknown",
                 "updated_at": job.updated_at,
-                "sla_status": _get_sla_status(job.sla_due_at)
+                "sla_status": _get_sla_status(job.sla_due_at),
+                "picea_verify_status": job.picea_verify_status,
+                "picea_erase_confirmed": job.picea_erase_confirmed,
+                "picea_mdm_locked": job.picea_mdm_locked
             } for job in recent_jobs
         ]
     }
@@ -115,13 +122,15 @@ async def get_floor_status(
     """
     Get live floor status: stations with their active jobs.
     """
+    return await _get_floor_status_data(session)
+
+async def _get_floor_status_data(session: AsyncSession) -> list[dict[str, Any]]:
     # Fetch all active stations
     stations_query = select(Station).where(Station.is_active == True).order_by(Station.name)
     stations_result = await session.execute(stations_query)
     stations = stations_result.scalars().all()
 
     # Fetch all active jobs with device details
-    # We fetch them effectively properly instead of relying on intricate relationship loading filtering
     jobs_query = select(Job).options(
         selectinload(Job.device).selectinload(Device.brand),
         selectinload(Job.device).selectinload(Device.gadget_type)
@@ -149,13 +158,15 @@ async def get_floor_status(
             "device_type": job.device.gadget_type.name if job.device and job.device.gadget_type else "Unknown",
             "model": job.device.model if job.device else "Unknown",
             "updated_at": job.updated_at,
-            "batches": job.batch_id
+            "batches": job.batch_id,
+            "picea_verify_status": job.picea_verify_status,
+            "picea_erase_confirmed": job.picea_erase_confirmed,
+            "picea_mdm_locked": job.picea_mdm_locked
         })
 
     # Build response structure
     floor_view = []
 
-    # 1. Add "Intake/Unassigned" virtual column if there are strictly unassigned jobs (optional, depends on workflow)
     if "unassigned" in jobs_by_station and jobs_by_station["unassigned"]:
         floor_view.append({
             "id": "unassigned",
@@ -164,7 +175,6 @@ async def get_floor_status(
             "jobs": jobs_by_station["unassigned"]
         })
 
-    # 2. Add actual Stations
     for station in stations:
         s_id = str(station.id)
         floor_view.append({
@@ -175,6 +185,23 @@ async def get_floor_status(
         })
 
     return floor_view
+
+@router.get("/floor/stream")
+async def get_floor_status_stream(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    SSE endpoint for real-time floor view updates.
+    """
+    async def event_generator():
+        while True:
+            async with async_session_factory() as db_session:
+                floor_view = await _get_floor_status_data(db_session)
+                yield f"data: {json.dumps(floor_view, default=str)}\n\n"
+            await asyncio.sleep(5)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 @router.get("/defects")
 async def get_defect_heatmap(
@@ -258,3 +285,52 @@ async def get_technician_leaderboard(
             "jobs_completed": row.jobs_completed
         } for row in rows
     ]
+
+@router.get("/throughput")
+async def get_throughput_times(
+    days: int = 30,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict[str, Any]:
+    """
+    Get average throughput time (Genomströmningstid) per station for the last N days.
+    """
+    cutoff = datetime.now(UTC) - timedelta(days=days)
+
+    from sqlalchemy import extract
+
+    # We use extract('epoch', dt2 - dt1) to get duration in seconds in PostgreSQL
+    # Fallback to simple average of the interval if supported
+    query = (
+        select(
+            func.avg(extract('epoch', Job.intake_completed_at - Job.intake_started_at)).label("avg_intake"),
+            func.avg(extract('epoch', Job.reset_completed_at - Job.reset_started_at)).label("avg_reset"),
+            func.avg(extract('epoch', Job.functional_completed_at - Job.functional_started_at)).label("avg_functional"),
+            func.avg(extract('epoch', Job.qc_completed_at - Job.qc_started_at)).label("avg_qc"),
+            # Total average throughput from created to completed
+            func.avg(extract('epoch', Job.completed_at - Job.created_at)).label("avg_total")
+        )
+        .where(
+            Job.deleted_at.is_(None),
+            Job.completed_at >= cutoff
+        )
+    )
+
+    result = await session.execute(query)
+    stats = result.one()
+
+    def format_hours(seconds: float | None) -> float:
+        if not seconds:
+            return 0.0
+        return round(float(seconds) / 3600.0, 2)
+
+    return {
+        "period_days": days,
+        "stations": [
+            {"name": "Intake", "avg_time_hours": format_hours(stats.avg_intake)},
+            {"name": "Reset", "avg_time_hours": format_hours(stats.avg_reset)},
+            {"name": "Functional", "avg_time_hours": format_hours(stats.avg_functional)},
+            {"name": "QC", "avg_time_hours": format_hours(stats.avg_qc)},
+        ],
+        "total_avg_time_hours": format_hours(stats.avg_total)
+    }

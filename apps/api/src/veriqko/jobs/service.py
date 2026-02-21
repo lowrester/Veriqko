@@ -98,6 +98,13 @@ class JobRepository:
 
     async def create(self, data: JobCreate, user_id: str) -> Job:
         """Create a new job."""
+        if data.imei:
+            from veriqko.integrations.gsma import gsma_client
+            from fastapi import HTTPException
+            is_blacklisted = await gsma_client.check_imei_blacklist(data.imei)
+            if is_blacklisted:
+                raise HTTPException(status_code=400, detail="Device IMEI is blacklisted by GSMA")
+
         now = datetime.now(UTC)
         ticket_id = await self._get_next_ticket_id()
         from datetime import timedelta
@@ -142,7 +149,17 @@ class JobRepository:
         common = data.common_data or {}
         device_id = common.get("device_id")
 
+        from veriqko.integrations.gsma import gsma_client
+        from fastapi import HTTPException
+
         for i, sn in enumerate(data.serial_numbers):
+            # In a batch context, we usually do not have distinct IMEIs provided in the serial_numbers list 
+            # unless SN is used as IMEI. We will assume serial_numbers could be IMEI for the sake of the GSMA check
+            # if the device is a phone. To be safe, we just check SN against GSMA if it looks like an IMEI (15 digits).
+            if sn.isdigit() and len(sn) == 15:
+                is_blacklisted = await gsma_client.check_imei_blacklist(sn)
+                if is_blacklisted:
+                    raise HTTPException(status_code=400, detail=f"Device with IMEI {sn} is blacklisted by GSMA")
             job = Job(
                 id=str(uuid4()),
                 ticket_id=start_ticket_id + i,
@@ -398,6 +415,14 @@ class JobService:
                     # Log that no email was sent
                     import logging
                     logging.getLogger("veriqko").info(f"No customer email found in reference for job {job.id}, skipping completion email")
+
+                # Trigger Miradore MDM re-enrollment
+                from veriqko.integrations.miradore import miradore_client
+                import asyncio
+                
+                # Run as a background pseudo-task by attaching to the event loop un-awaited to avoid blocking response
+                # (in a real production setup this would be an APScheduler/Celery task)
+                asyncio.create_task(miradore_client.enroll_device(job.serial_number, customer_email))
 
         return job, result
 

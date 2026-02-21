@@ -38,6 +38,9 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     """Job model - core workflow entity representing a device being processed."""
 
     __tablename__ = "jobs"
+    __table_args__ = (
+        sa.Index("ix_jobs_status_created_at", "status", "created_at"),
+    )
 
     # Device reference
     device_id: Mapped[str | None] = mapped_column(
@@ -89,11 +92,13 @@ class Job(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     qc_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Customer/batch reference
-    batch_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    batch_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     customer_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # SLA Tracking
     sla_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sla_warning_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sla_breach_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Intake condition
     intake_condition: Mapped[dict | None] = mapped_column(JSON, nullable=True)

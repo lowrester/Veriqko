@@ -304,25 +304,17 @@ done
 log "Using IP: $VM_IP"
 
 # Wait for SSH to be ready
-log "Waiting for SSH to become available..."
-for i in $(seq 1 24); do
-    if ssh -o StrictHostKeyChecking=no \
-           -o UserKnownHostsFile=/dev/null \
-           -o ConnectTimeout=5 \
-           -o BatchMode=yes \
-           -i "$PROXMOX_SSH_KEY" \
-           "${VM_USER}@${VM_IP}" "echo ok" &>/dev/null; then
-        log "SSH is ready"
-        break
-    fi
-    log "  Waiting for SSH... ($((i*5))s)"
+log "Waiting for VM network readiness ($VM_IP)..."
+until ssh -q -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -i "$PROXMOX_SSH_KEY" "$VM_USER@$VM_IP" exit 2>/dev/null; do
     sleep 5
 done
+log "✅ VM network ready!"
 
 #===============================================================================
 # Helper: run command inside VM via SSH
 #===============================================================================
 
+# Wrapper for executing commands on the VM securely via SSH
 vm_ssh() {
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
@@ -357,7 +349,7 @@ vm_ssh "echo '$ENV_BLOCK' | sudo tee /root/veriqko-env.sh > /dev/null"
 vm_ssh "sudo chmod 600 /root/veriqko-env.sh"
 
 log "Running deploy-ubuntu.sh inside VM..."
-vm_ssh "sudo bash -c 'source /root/veriqko-env.sh && curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-ubuntu.sh | bash'" || \
+vm_ssh "sudo bash -c 'set -euo pipefail; source /root/veriqko-env.sh && curl -fsSL --retry 3 --retry-delay 2 https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-ubuntu.sh | bash'" || \
     error "deploy-ubuntu.sh failed inside VM. Check VM console for details."
 
 log "OS provisioning complete"
@@ -400,7 +392,7 @@ fi
 step "7/8 — Platform Installation (inside VM)"
 
 log "Running deploy-platform-v2.sh inside VM..."
-vm_ssh "sudo bash -c 'source /root/veriqko-env.sh && curl -fsSL https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-platform-v2.sh | bash'" || \
+vm_ssh "sudo bash -c 'set -euo pipefail; source /root/veriqko-env.sh && curl -fsSL --retry 3 --retry-delay 2 https://raw.githubusercontent.com/lowrester/Veriqko/main/infra/deploy-platform-v2.sh | bash'" || \
     error "deploy-platform-v2.sh failed inside VM. Check VM console for details."
 
 log "Platform installation complete"

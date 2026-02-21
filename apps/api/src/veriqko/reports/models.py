@@ -52,8 +52,8 @@ class Report(Base, UUIDMixin):
     )
 
     # Generated file
-    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
     # Public access token
     access_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)

@@ -80,11 +80,11 @@ secure_prompt() {
     if [ -z "${!var_name:-}" ]; then
         if [ "$secret" = "true" ]; then
             printf "${CYAN}[PROMPT]${NC} %s (will be hidden): " "$prompt"
-            read -rs val
+            read -rs val < /dev/tty 2>/dev/null || true
             echo ""
         else
             printf "${CYAN}[PROMPT]${NC} %s [%s]: " "$prompt" "$default_val"
-            read -r val
+            read -r val < /dev/tty 2>/dev/null || true
         fi
         
         if [ -z "$val" ]; then
@@ -378,12 +378,12 @@ WorkingDirectory=${API_DIR}
 Environment=PATH=${API_DIR}/.venv/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PYTHONPATH=${API_DIR}/src
 EnvironmentFile=${API_DIR}/.env
-# Production Tuning: increased workers and timeout
-ExecStart=${API_DIR}/.venv/bin/uvicorn veriqko.main:app \
-    --host 127.0.0.1 \
-    --port 8000 \
+# Production Tuning: Gunicorn with Uvicorn workers for higher throughput
+ExecStart=${API_DIR}/.venv/bin/gunicorn veriqko.main:app \
     --workers $WORKERS \
-    --timeout-keep-alive 60
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --timeout 60
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=always
 RestartSec=5
@@ -432,6 +432,8 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com;" always;
 
     # API proxy
     location /api/ {
@@ -503,6 +505,34 @@ if [ "${VERIQKO_DOMAIN}" != "$(hostname -f)" ] && [ "${VERIQKO_DOMAIN}" != "loca
         warn "Domain '$VERIQKO_DOMAIN' not publicly resolvable. Run certbot manually after DNS is configured."
     fi
 fi
+
+#===============================================================================
+# Database Backups (pg_dump + cron)
+#===============================================================================
+
+step "7/8 — Database Backups"
+log "Configuring automated daily PostgreSQL backups..."
+
+BACKUP_SCRIPT="$VERIQKO_HOME/backup-db.sh"
+cat > "$BACKUP_SCRIPT" <<EOF
+#!/bin/bash
+set -e
+BACKUP_DIR="$BACKUPS_DIR"
+TIMESTAMP=\$(date +"%Y%m%d_%H%M%S")
+BACKUP_FILE="\$BACKUP_DIR/veriqko_db_\$TIMESTAMP.sql.gz"
+
+# Dump and compress database
+sudo -u postgres pg_dump veriqko | gzip > "\$BACKUP_FILE"
+
+# Keep only last 14 days of backups
+find "\$BACKUP_DIR" -type f -name "veriqko_db_*.sql.gz" -mtime +14 -delete
+EOF
+
+chmod +x "$BACKUP_SCRIPT"
+chown $VERIQKO_USER:$VERIQKO_USER "$BACKUP_SCRIPT"
+
+# Add to veriqko user's crontab (run daily at 02:00)
+(crontab -l -u $VERIQKO_USER 2>/dev/null | grep -v "$BACKUP_SCRIPT"; echo "0 2 * * * $BACKUP_SCRIPT >> $LOGS_DIR/backup.log 2>&1") | crontab -u $VERIQKO_USER -
 
 #===============================================================================
 # Health Check
